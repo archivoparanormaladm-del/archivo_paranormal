@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" width="220" height="60">
+  <!-- Caja isométrica -->
+  <g transform="translate(8, 6)">
+    <!-- Cara superior -->
+    <polygon points="22,4 38,12 22,20 6,12" fill="#c23b3b" stroke="#ff5555" stroke-width="0.8"/>
+    <!-- Cara izquierda -->
+    <polygon points="6,12 22,20 22,38 6,30" fill="#8a1a1a" stroke="#ff5555" stroke-width="0.8"/>
+    <!-- Cara derecha -->
+    <polygon points="22,20 38,12 38,30 22,38" fill="#a82828" stroke="#ff5555" stroke-width="0.8"/>
+    <!-- Fantasma -->
+    <g transform="translate(15, 10)">
+      <ellipse cx="7" cy="7" rx="5.5" ry="6" fill="#f0e8dc" opacity="0.9"/>
+      <rect x="1.5" y="11" width="11" height="7" fill="#f0e8dc" opacity="0.9"/>
+      <path d="M1.5,18 Q3.5,15 5.5,18 Q7,15 8.5,18 Q10.5,15 12.5,18" fill="#f0e8dc" opacity="0.9"/>
+      <circle cx="5" cy="7" r="1.2" fill="#1a0000"/>
+      <circle cx="9" cy="7" r="1.2" fill="#1a0000"/>
+    </g>
+    <!-- Líneas de la caja -->
+    <line x1="22" y1="20" x2="22" y2="38" stroke="#ff5555" stroke-width="0.6" opacity="0.5"/>
+  </g>
+
+  <!-- Texto "archivo paranormal" -->
+  <text x="56" y="26" font-family="Courier New, monospace" font-size="15" font-weight="bold" fill="#ff4444" letter-spacing="1">archivo</text>
+  <text x="56" y="46" font-family="Courier New, monospace" font-size="15" font-weight="bold" fill="#ff4444" letter-spacing="1">paranormal</text>
+</svg>

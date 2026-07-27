@@ -1,0 +1,16 @@
+# Entorno
+venv/
+__pycache__/
+*.pyc
+
+# Secretos
+.env
+
+# Archivos subidos por usuarios (nunca al repo)
+uploads/
+
+# macOS
+.DS_Store
+
+# Config local de herramientas
+.claude/

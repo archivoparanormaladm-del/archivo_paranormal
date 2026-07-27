@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registrarse — Archivo Paranormal</title>
+<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="login.css">
+<link rel="stylesheet" href="register.css">
+</head>
+<body>
+
+<nav class="navbar" style="justify-content:flex-start">
+  <a class="navbar-logo" onclick="window.location.href='/'">
+    <img src="/logo.png" alt="Archivo Paranormal">
+  </a>
+</nav>
+<div class="login-wrap">
+  <h1 class="title">ÚNETE</h1>
+  <p class="subtitle">Perfil Estándar — sujeto a aprobación de contenido.</p>
+
+  <form id="register-form">
+    <label for="nombre">nombre completo</label>
+    <input type="text" id="nombre" autocomplete="off" required>
+
+    <label for="username">nombre de usuario <small style="color:#666">@usuario único</small></label>
+    <div style="position:relative">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#b30000">@</span>
+      <input type="text" id="username" autocomplete="off"
+             placeholder="ej: cazafantasmas99"
+             style="padding-left:24px" required>
+    </div>
+    <p id="username-status" class="username-status"></p>
+
+    <label for="email">correo</label>
+    <input type="email" id="email" autocomplete="off" required>
+
+    <label for="password">contraseña <small style="color:#666">mín. 8 caracteres</small></label>
+    <input type="password" id="password" required>
+
+    <p id="error-msg" class="error-msg hidden"></p>
+    <p id="ok-msg"    class="ok-msg hidden"></p>
+
+    <button type="submit" class="btn-ingresar">REGISTRARSE</button>
+  </form>
+
+  <p class="link-register">
+    ¿Ya tienes cuenta? <a href="/">Iniciar sesión</a>
+  </p>
+</div>
+
+<div class="vhs-overlay"></div>
+
+<script src="temas.js"></script>
+<script>
+const usernameInput  = document.getElementById('username');
+const usernameStatus = document.getElementById('username-status');
+let usernameOk = false;
+let checkTimeout;
+
+usernameInput.addEventListener('input', () => {
+  clearTimeout(checkTimeout);
+  const val = usernameInput.value.trim().toLowerCase();
+  if (!val) { usernameStatus.textContent = ''; return; }
+
+  const regex = /^[a-zA-Z0-9_\.]{3,30}$/;
+  if (!regex.test(val)) {
+    usernameStatus.textContent = 'Solo letras, números, puntos y _ (3-30 caracteres)';
+    usernameStatus.className = 'username-status error';
+    usernameOk = false;
+    return;
+  }
+
+  usernameStatus.textContent = 'Verificando...';
+  usernameStatus.className = 'username-status';
+
+  checkTimeout = setTimeout(async () => {
+    const res  = await fetch(`/api/auth/check_username?username=${encodeURIComponent(val)}`);
+    const data = await res.json();
+    if (data.disponible) {
+      usernameStatus.textContent = `@${val} está disponible ✓`;
+      usernameStatus.className = 'username-status ok';
+      usernameOk = true;
+    } else {
+      usernameStatus.textContent = `@${val} ya está en uso`;
+      usernameStatus.className = 'username-status error';
+      usernameOk = false;
+    }
+  }, 500);
+});
+
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('error-msg');
+  const okEl  = document.getElementById('ok-msg');
+  errEl.classList.add('hidden');
+  okEl.classList.add('hidden');
+
+  if (!usernameOk) {
+    errEl.textContent = 'El nombre de usuario no está disponible o es inválido.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  const res = await fetch('/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      nombre:   document.getElementById('nombre').value,
+      username: usernameInput.value.trim().toLowerCase(),
+      email:    document.getElementById('email').value,
+      password: document.getElementById('password').value,
+    }),
+  });
+  const data = await res.json();
+
+  if (data.error) {
+    errEl.textContent = data.error;
+    errEl.classList.remove('hidden');
+  } else {
+    okEl.textContent = '¡Cuenta creada! Redirigiendo...';
+    okEl.classList.remove('hidden');
+    setTimeout(() => window.location.href = '/', 1800);
+  }
+});
+</script>
+</body>
+</html>

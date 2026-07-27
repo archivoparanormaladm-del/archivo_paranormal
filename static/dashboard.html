@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>Inicio — Archivo Paranormal</title>
+<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="/dashboard.html">
+    <img src="/logo.png" alt="Archivo Paranormal">
+  </a>
+  <div class="navbar-nav" id="navbar-nav"></div>
+  <div class="navbar-session" id="session-bar"></div>
+</nav>
+
+<div class="action-bar">
+  <div class="search-wrap">
+    <input type="text" id="buscador" placeholder="Buscar en el archivo..." autocomplete="off">
+    <div id="resultados-busqueda"></div>
+  </div>
+  <button class="btn-subir hidden" id="btn-subir">
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+    Subir archivo
+  </button>
+</div>
+
+<div class="folders-grid" id="folders-grid"></div>
+
+<div class="vhs-overlay"></div>
+<script src="temas.js"></script>
+<script src="auth.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+body {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 100vh; padding: 20px;
+}
+
+.login-logo {
+  margin-bottom: 28px; text-align: center;
+}
+.login-logo img {
+  width: 280px; max-width: 90vw; height: auto;
+  filter: drop-shadow(0 0 20px rgba(230,53,53,.2));
+}
+
+.login-wrap { width: 100%; max-width: 380px; }
+
+.title {
+  font-size: 1.3rem; font-weight: 700;
+  text-align: center; color: var(--red);
+  letter-spacing: 4px; text-transform: uppercase;
+  text-shadow: 0 0 20px var(--red-glow);
+  margin-bottom: 28px;
+}
+
+form { display: flex; flex-direction: column; }
+
+label {
+  font-size: 11px; font-weight: 600;
+  color: var(--text-2); margin-bottom: 6px;
+  letter-spacing: .4px; text-transform: uppercase;
+}
+
+input {
+  background: var(--bg-2); border: 1px solid var(--border);
+  color: var(--text); font-family: inherit; font-size: 14px;
+  padding: 10px 14px; margin-bottom: 16px; outline: none;
+  border-radius: 8px; transition: border-color .15s, box-shadow .15s;
+}
+input:focus { border-color: var(--red-2); box-shadow: 0 0 0 3px rgba(192,32,32,.15); }
+
+.error-msg {
+  color: #ff6b6b; font-size: 13px; margin-bottom: 12px;
+  padding: 10px 12px; background: rgba(255,60,60,.08);
+  border: 1px solid rgba(255,60,60,.2); border-radius: 6px;
+}
+
+.btn-ingresar {
+  background: var(--red-2); color: #fff;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  letter-spacing: .3px; padding: 11px; border: none;
+  cursor: pointer; border-radius: 8px;
+  transition: background .2s, box-shadow .2s;
+}
+.btn-ingresar:hover { background: var(--red-dark); box-shadow: 0 0 20px var(--red-glow); }
+
+.link-register { text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-3); }
+.link-register a { color: var(--red); text-decoration: none; font-weight: 500; }
+.link-register a:hover { text-decoration: underline; }
+
+@media (max-width: 480px) {
+  .login-logo img { width: 200px; }
+  .title { font-size: 1rem; letter-spacing: 2px; }
+}

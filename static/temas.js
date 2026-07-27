@@ -1,0 +1,202 @@
+const TEMAS = {
+  rojo: {
+    nombre: 'Rojo Neón',
+    icono: '🔴',
+    vars: {
+      '--red':      '#e63535',
+      '--red-2':    '#c02020',
+      '--red-dark': '#8a0f0f',
+      '--red-bg':   '#1c0808',
+      '--red-glow': 'rgba(230,53,53,.35)',
+    }
+  },
+  verde: {
+    nombre: 'Verde Fantasma',
+    icono: '🟢',
+    vars: {
+      '--red':      '#22c55e',
+      '--red-2':    '#16a34a',
+      '--red-dark': '#14532d',
+      '--red-bg':   '#052e16',
+      '--red-glow': 'rgba(34,197,94,.35)',
+    }
+  },
+  azul: {
+    nombre: 'Azul Espectral',
+    icono: '🔵',
+    vars: {
+      '--red':      '#3b82f6',
+      '--red-2':    '#2563eb',
+      '--red-dark': '#1e3a8a',
+      '--red-bg':   '#0d1f4a',
+      '--red-glow': 'rgba(59,130,246,.35)',
+    }
+  },
+  morado: {
+    nombre: 'Morado Oscuro',
+    icono: '🟣',
+    vars: {
+      '--red':      '#a855f7',
+      '--red-2':    '#9333ea',
+      '--red-dark': '#581c87',
+      '--red-bg':   '#2e0f4a',
+      '--red-glow': 'rgba(168,85,247,.35)',
+    }
+  },
+  naranja: {
+    nombre: 'Naranja Fuego',
+    icono: '🟠',
+    vars: {
+      '--red':      '#f97316',
+      '--red-2':    '#ea580c',
+      '--red-dark': '#7c2d12',
+      '--red-bg':   '#3d1505',
+      '--red-glow': 'rgba(249,115,22,.35)',
+    }
+  },
+  cyan: {
+    nombre: 'Cyan Paranormal',
+    icono: '🩵',
+    vars: {
+      '--red':      '#06b6d4',
+      '--red-2':    '#0891b2',
+      '--red-dark': '#164e63',
+      '--red-bg':   '#042f3e',
+      '--red-glow': 'rgba(6,182,212,.35)',
+    }
+  },
+  rosa: {
+    nombre: 'Rosa Sangre',
+    icono: '🩷',
+    vars: {
+      '--red':      '#ec4899',
+      '--red-2':    '#db2777',
+      '--red-dark': '#831843',
+      '--red-bg':   '#3d0a24',
+      '--red-glow': 'rgba(236,72,153,.35)',
+    }
+  },
+  amarillo: {
+    nombre: 'Amarillo Maldito',
+    icono: '🟡',
+    vars: {
+      '--red':      '#eab308',
+      '--red-2':    '#ca8a04',
+      '--red-dark': '#713f12',
+      '--red-bg':   '#2d1a03',
+      '--red-glow': 'rgba(234,179,8,.35)',
+    }
+  },
+};
+
+function aplicarTema(nombre) {
+  const tema = TEMAS[nombre];
+  if (!tema) return;
+  const root = document.documentElement;
+  Object.entries(tema.vars).forEach(([k, v]) => root.style.setProperty(k, v));
+  localStorage.setItem('tema', nombre);
+}
+
+function cargarTema() {
+  const guardado = localStorage.getItem('tema') || 'rojo';
+  aplicarTema(guardado);
+  return guardado;
+}
+
+function crearSelectorTema() {
+  const actual = cargarTema();
+
+  const btn = document.createElement('button');
+  btn.className = 'btn-top btn-logout tema-btn';
+  btn.title = 'Cambiar tema';
+  btn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a7 7 0 1 0 10 10"/><path d="M12 8v4l2 2"/></svg>
+    Tema
+  `;
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'tema-dropdown hidden';
+  dropdown.innerHTML = Object.entries(TEMAS).map(([key, t]) => `
+    <div class="tema-opcion ${key === actual ? 'activo' : ''}" data-tema="${key}">
+      <span class="tema-dot" style="background:${t.vars['--red']}"></span>
+      ${t.nombre}
+    </div>
+  `).join('');
+
+  const wrap = document.createElement('div');
+  wrap.style.position = 'relative';
+  wrap.appendChild(btn);
+  wrap.appendChild(dropdown);
+
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    dropdown.classList.toggle('hidden');
+  });
+
+  dropdown.querySelectorAll('.tema-opcion').forEach(op => {
+    op.addEventListener('click', () => {
+      aplicarTema(op.dataset.tema);
+      dropdown.querySelectorAll('.tema-opcion').forEach(o => o.classList.remove('activo'));
+      op.classList.add('activo');
+      dropdown.classList.add('hidden');
+    });
+  });
+
+  document.addEventListener('click', () => dropdown.classList.add('hidden'));
+
+  return wrap;
+}
+
+/* ── Modo claro / oscuro ──────────────────────────────── */
+// En modo claro el logo original (blanco) se pierde sobre el fondo claro,
+// así que se cambia a la versión negra.
+function actualizarLogo() {
+  const modo = document.documentElement.getAttribute('data-modo') || 'oscuro';
+  const src  = modo === 'claro' ? '/logoblack.png' : '/logo.png';
+  document.querySelectorAll('img[alt="Archivo Paranormal"]').forEach(img => {
+    img.setAttribute('src', src);
+  });
+}
+
+function aplicarModo(modo) {
+  document.documentElement.setAttribute('data-modo', modo);
+  localStorage.setItem('modo', modo);
+  actualizarLogo();
+}
+
+function cargarModo() {
+  const modo = localStorage.getItem('modo') || 'oscuro';
+  document.documentElement.setAttribute('data-modo', modo);
+  // El logo se ajusta cuando el DOM esté listo (por si el script corre antes).
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', actualizarLogo);
+  } else {
+    actualizarLogo();
+  }
+  return modo;
+}
+
+const ICONO_LUNA = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
+const ICONO_SOL  = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></svg>';
+
+function crearToggleModo() {
+  const btn = document.createElement('button');
+  btn.className = 'btn-top btn-logout modo-btn';
+  const pintar = () => {
+    const modo = document.documentElement.getAttribute('data-modo') || 'oscuro';
+    btn.innerHTML = (modo === 'claro' ? ICONO_LUNA : ICONO_SOL) +
+                    `<span>${modo === 'claro' ? 'Oscuro' : 'Claro'}</span>`;
+    btn.title = modo === 'claro' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro';
+  };
+  pintar();
+  btn.addEventListener('click', () => {
+    const actual = document.documentElement.getAttribute('data-modo') || 'oscuro';
+    aplicarModo(actual === 'claro' ? 'oscuro' : 'claro');
+    pintar();
+  });
+  return btn;
+}
+
+// Aplicar tema y modo al cargar cualquier página
+cargarTema();
+cargarModo();

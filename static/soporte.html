@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soporte — Archivo Paranormal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="soporte.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="/dashboard.html">
+    <img src="/logo.png" alt="Archivo Paranormal">
+  </a>
+  <div class="navbar-nav" id="navbar-nav"></div>
+  <div class="navbar-session" id="session-bar"></div>
+</nav>
+
+<div class="soporte-layout">
+  <h1 class="soporte-title">Centro de Soporte</h1>
+  <p class="soporte-sub">Solo usuarios registrados pueden solicitar soporte al equipo de administración.</p>
+
+  <div class="soporte-cards">
+
+    <!-- ── Crear solicitud ── -->
+    <section class="soporte-card">
+      <h2 class="card-title">Nueva solicitud</h2>
+
+      <form id="form-ticket">
+        <div id="campo-email" class="hidden">
+          <label>Correo registrado <span class="req">*</span></label>
+          <input type="email" id="t-email" placeholder="tu@correo.com" autocomplete="email">
+        </div>
+
+        <label>Asunto <span class="req">*</span></label>
+        <input type="text" id="t-asunto" maxlength="200" placeholder="Resume tu solicitud" required>
+
+        <label>Comentarios <span class="req">*</span></label>
+        <textarea id="t-comentario" rows="5" placeholder="Describe tu solicitud con el mayor detalle posible..." required></textarea>
+
+        <p id="ticket-error" class="error-msg hidden"></p>
+        <button type="submit" class="btn-primario" id="btn-enviar">Enviar solicitud</button>
+      </form>
+
+      <!-- Resultado con el número de ticket -->
+      <div id="ticket-resultado" class="ticket-resultado hidden">
+        <p class="res-check">✓ Solicitud enviada</p>
+        <p class="res-numero" id="res-numero"></p>
+        <p class="res-msg" id="res-msg"></p>
+        <button class="btn-secundario" id="btn-copiar">Copiar número</button>
+      </div>
+    </section>
+
+    <!-- ── Consultar solicitud ── -->
+    <section class="soporte-card">
+      <h2 class="card-title">Consultar estado</h2>
+      <p class="card-hint">Ingresa el número de solicitud que guardaste (ej. Ticket-000001).</p>
+
+      <form id="form-consulta">
+        <label>Número de solicitud <span class="req">*</span></label>
+        <input type="text" id="c-numero" placeholder="Ticket-000001" required>
+        <p id="consulta-error" class="error-msg hidden"></p>
+        <button type="submit" class="btn-primario">Consultar</button>
+      </form>
+
+      <div id="consulta-resultado" class="consulta-resultado hidden">
+        <div class="cr-row"><span class="cr-label">Número</span><span id="cr-numero" class="cr-val"></span></div>
+        <div class="cr-row"><span class="cr-label">Estado</span><span id="cr-estado" class="cr-badge"></span></div>
+        <div class="cr-row"><span class="cr-label">Asunto</span><span id="cr-asunto" class="cr-val"></span></div>
+        <div class="cr-row"><span class="cr-label">Fecha</span><span id="cr-fecha" class="cr-val"></span></div>
+        <div class="cr-respuesta-wrap hidden" id="cr-respuesta-wrap">
+          <span class="cr-label">Respuesta del administrador</span>
+          <p id="cr-respuesta" class="cr-respuesta"></p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="vhs-overlay"></div>
+<script src="temas.js"></script>
+<script src="auth.js"></script>
+<script src="soporte.js"></script>
+</body>
+</html>

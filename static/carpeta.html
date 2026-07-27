@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carpeta — Archivo Paranormal</title>
+<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="carpeta.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" onclick="irHome()">
+    <img src="/logo.png" alt="Archivo Paranormal">
+  </a>
+  <div class="navbar-nav" id="navbar-nav"></div>
+  <span id="cat-title-top" class="navbar-cat-title"></span>
+  <div class="navbar-session" id="session-bar"></div>
+</nav>
+</div>
+
+<!-- Layout Outlook: panel izquierdo + panel derecho -->
+<div class="outlook-layout">
+
+  <!-- PANEL IZQUIERDO: lista de archivos -->
+  <div class="panel-lista" id="panel-lista">
+    <div class="lista-header">
+      <span id="lista-count" class="lista-count"></span>
+    </div>
+    <div id="lista-items"></div>
+  </div>
+
+  <!-- PANEL DERECHO: detalle -->
+  <div class="panel-detalle" id="panel-detalle">
+    <div class="detalle-vacio" id="detalle-vacio">
+      <span class="vacio-icon">📁</span>
+      <p>Selecciona un archivo de la lista</p>
+    </div>
+    <div class="detalle-contenido hidden" id="detalle-contenido">
+      <!-- Se llena dinámicamente -->
+    </div>
+  </div>
+
+</div>
+
+<div class="vhs-overlay"></div>
+<script src="temas.js"></script>
+<script src="auth.js"></script>
+<script src="carpeta.js"></script>
+</body>
+</html>

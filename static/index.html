@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>Acceso — Archivo Paranormal</title>
+<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="login.css">
+</head>
+<body>
+
+<div class="login-logo">
+  <img src="/logo.png" alt="Archivo Paranormal">
+</div>
+
+<div class="login-wrap">
+  <p class="title">Entra si te atreves</p>
+  <form id="login-form">
+    <label>Correo</label>
+    <input type="email" id="email" required autocomplete="email" placeholder="tu@correo.com">
+    <label>Contraseña</label>
+    <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••">
+    <div id="error-msg" class="error-msg hidden"></div>
+    <button type="submit" class="btn-ingresar">Entrar</button>
+  </form>
+  <p class="link-register">¿No tienes cuenta? <a href="/register.html">Registrarse</a></p>
+  <p class="link-register">¿Necesitas ayuda? <a href="/soporte.html">Soporte</a></p>
+</div>
+
+<div class="vhs-overlay"></div>
+<script src="temas.js"></script>
+<script>
+document.getElementById('login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const errEl = document.getElementById('error-msg');
+  errEl.classList.add('hidden');
+  const res  = await fetch('/api/auth/login', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ email: document.getElementById('email').value, password: document.getElementById('password').value })
+  });
+  const data = await res.json();
+  if (data.ok) { window.location.href = '/dashboard.html'; }
+  else { errEl.textContent = data.error || 'Error al iniciar sesión'; errEl.classList.remove('hidden'); }
+});
+</script>
+</body>
+</html>

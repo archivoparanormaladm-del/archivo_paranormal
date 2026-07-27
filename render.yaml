@@ -1,0 +1,21 @@
+# Blueprint de Render — despliega la app Flask en el plan gratuito.
+# La base de datos va aparte, en Neon (Postgres gratis): pega su cadena
+# de conexión en la variable DATABASE_URL cuando Render te la pida.
+services:
+  - type: web
+    name: archivo-paranormal
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: waitress-serve --host=0.0.0.0 --port=$PORT app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: SECRET_KEY
+        generateValue: true      # Render genera una clave segura automáticamente
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: MAX_CONTENT_MB
+        value: "50"
+      - key: DATABASE_URL
+        sync: false              # la pegas tú (viene de Neon)

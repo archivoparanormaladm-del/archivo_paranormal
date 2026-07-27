@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Perfil — Archivo Paranormal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="perfil.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" onclick="irHome()">
+    <img src="/logo.png" alt="Archivo Paranormal">
+  </a>
+  <div class="navbar-nav" id="navbar-nav"></div>
+  <div class="navbar-session" id="session-bar"></div>
+</nav>
+
+<div class="perfil-layout">
+
+  <!-- Tabs -->
+  <div class="perfil-tabs">
+    <button class="perfil-tab active" data-tab="publicaciones">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      Mis publicaciones
+    </button>
+    <button class="perfil-tab" data-tab="guardados">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+      Guardados
+    </button>
+  </div>
+
+  <!-- Publicaciones -->
+  <div id="tab-publicaciones" class="perfil-content">
+    <p class="perfil-section-title">MIS PUBLICACIONES</p>
+    <div id="lista-publicaciones" class="perfil-grid">
+      <p class="cargando-txt">Cargando...</p>
+    </div>
+  </div>
+
+  <!-- Guardados -->
+  <div id="tab-guardados" class="perfil-content hidden">
+    <p class="perfil-section-title">ARCHIVOS GUARDADOS</p>
+    <div id="lista-guardados" class="perfil-grid">
+      <p class="cargando-txt">Cargando...</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="vhs-overlay"></div>
+<script src="temas.js"></script>
+<script src="auth.js"></script>
+<script src="perfil.js"></script>
+</body>
+</html>

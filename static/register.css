@@ -1,0 +1,12 @@
+.subtitle {
+  text-align: center; color: var(--text-3);
+  font-size: 13px; margin-bottom: 24px; line-height: 1.5;
+}
+.ok-msg {
+  color: #4ade80; font-size: 13px; margin-bottom: 12px;
+  padding: 10px 12px; background: rgba(74,222,128,.08);
+  border: 1px solid rgba(74,222,128,.2); border-radius: 6px;
+}
+.username-status      { font-size: 12px; margin: -10px 0 12px; min-height: 16px; }
+.username-status.ok   { color: #4ade80; }
+.username-status.error{ color: #ff6b6b; }
