@@ -80,10 +80,6 @@ async function renderSessionBar() {
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
         <span>Soporte</span>
       </button>
-      <button class="btn-top btn-logout" onclick="logout()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-        <span>Cerrar sesión</span>
-      </button>
       </div>
     `;
   } else {
@@ -111,6 +107,18 @@ async function renderSessionBar() {
   }
   if (sessionBar && typeof crearSelectorTema === 'function') {
     sessionBar.appendChild(crearSelectorTema());
+  }
+
+  // Icono de cerrar sesión en la barra superior (queda visible siempre,
+  // incluso en móvil donde los demás botones se mueven al menú inferior).
+  if (sessionBar && me.autenticado) {
+    const btnSalir = document.createElement('button');
+    btnSalir.className = 'btn-top btn-logout logout-top';
+    btnSalir.title = 'Cerrar sesión';
+    btnSalir.setAttribute('aria-label', 'Cerrar sesión');
+    btnSalir.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>';
+    btnSalir.addEventListener('click', logout);
+    sessionBar.appendChild(btnSalir);
   }
 
   renderBottomNav(me);
