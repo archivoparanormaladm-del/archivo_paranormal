@@ -182,4 +182,36 @@ function renderBottomNav(me) {
     `<a href="${it.href}" class="${it.center ? 'center' : ''} ${it.activo ? 'activo' : ''}" aria-label="${it.label}" title="${it.label}">${svgIcon(ICONS[it.icon], it.center ? 26 : 22)}</a>`
   ).join('');
   document.body.appendChild(nav);
+
+  // Si NO hay sesión, el + no navega: muestra un diálogo pidiendo cuenta.
+  if (!me.autenticado) {
+    const centro = nav.querySelector('a.center');
+    if (centro) {
+      centro.setAttribute('href', '#');
+      centro.addEventListener('click', e => { e.preventDefault(); mostrarDialogoSubir(); });
+    }
+  }
+}
+
+/* Diálogo: se requiere cuenta para subir archivos. */
+function mostrarDialogoSubir() {
+  if (document.getElementById('dlg-subir')) return;
+  const ov = document.createElement('div');
+  ov.className = 'dlg-overlay';
+  ov.id = 'dlg-subir';
+  ov.innerHTML = `
+    <div class="dlg-box">
+      <div class="dlg-icon">${svgIcon(ICONS.plus, 26)}</div>
+      <p class="dlg-title">Inicia sesión para subir</p>
+      <p class="dlg-text">Necesitas una cuenta para subir archivos al archivo. Inicia sesión o regístrate — es gratis.</p>
+      <div class="dlg-actions">
+        <a class="dlg-btn dlg-primary" href="/index.html">Iniciar sesión</a>
+        <a class="dlg-btn dlg-secondary" href="/register.html">Registrarse</a>
+      </div>
+      <button class="dlg-close" type="button">Cancelar</button>
+    </div>`;
+  document.body.appendChild(ov);
+  const cerrar = () => ov.remove();
+  ov.addEventListener('click', e => { if (e.target === ov) cerrar(); });
+  ov.querySelector('.dlg-close').addEventListener('click', cerrar);
 }

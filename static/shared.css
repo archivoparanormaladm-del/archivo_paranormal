@@ -143,6 +143,42 @@ body {
 /* Grupo de botones "movibles" de la barra superior (se ocultan en móvil) */
 .session-primary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
+/* ══ DIÁLOGO (requiere cuenta para subir) ══ */
+.dlg-overlay {
+  position: fixed; inset: 0; z-index: 500; padding: 20px;
+  background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center;
+  animation: dlg-in .15s ease;
+}
+@keyframes dlg-in { from { opacity: 0; } to { opacity: 1; } }
+.dlg-box {
+  background: var(--bg-1); border: 1px solid var(--border);
+  border-radius: 16px; padding: 26px 24px; max-width: 340px; width: 100%;
+  text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.5);
+}
+.dlg-icon {
+  width: 52px; height: 52px; margin: 0 auto 14px; border-radius: 50%;
+  background: var(--red-bg); color: var(--red);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--red-dark);
+}
+.dlg-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.dlg-text { font-size: 13px; color: var(--text-2); line-height: 1.5; margin-bottom: 20px; }
+.dlg-actions { display: flex; flex-direction: column; gap: 10px; }
+.dlg-btn {
+  display: block; padding: 11px; border-radius: 9px;
+  font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer;
+  font-family: inherit;
+}
+.dlg-primary { background: var(--red-2); color: #fff; }
+.dlg-primary:hover { background: var(--red-dark); }
+.dlg-secondary { background: var(--bg-2); color: var(--text); border: 1px solid var(--border); }
+.dlg-secondary:hover { border-color: var(--red-2); }
+.dlg-close {
+  margin-top: 14px; background: none; border: none; color: var(--text-3);
+  font-size: 13px; cursor: pointer; font-family: inherit;
+}
+.dlg-close:hover { color: var(--text-2); }
+
 /* ══ MENÚ INFERIOR FLOTANTE (móvil / tablet) ══ */
 .mobile-nav { display: none; }
 
