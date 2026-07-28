@@ -11,12 +11,14 @@
 }
 .btn-subir:hover { background: var(--red-bg); box-shadow: 0 0 22px rgba(255,0,0,.5); }
 
-/* Grid carpetas */
+/* Grid carpetas — flex centrado (se centran también las filas incompletas) */
 .folders-grid {
-  display: grid; grid-template-columns: repeat(5,1fr);
-  row-gap: 60px; column-gap: 20px;
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;
+  row-gap: 50px; column-gap: 40px;
   max-width: 1100px; margin: 50px auto 60px; padding: 0 40px;
 }
+.folders-grid .folder-item { width: 130px; align-items: center; }
+.folders-grid .folder-label { text-align: center; }
 
 .folder-item {
   display: flex; flex-direction: column;
