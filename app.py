@@ -260,7 +260,9 @@ def registrar_intento(email, ip):
 
 @app.route("/")
 def index():
-    return send_from_directory("static", "index.html")
+    # Landing pública: se muestra el contenido (carpetas) sin necesidad de login,
+    # al estilo YouTube. El login/registro vive en /index.html.
+    return send_from_directory("static", "dashboard.html")
 
 @app.route("/<path:filename>")
 def static_files(filename):

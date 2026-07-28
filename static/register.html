@@ -47,7 +47,7 @@
   </form>
 
   <p class="link-register">
-    ¿Ya tienes cuenta? <a href="/">Iniciar sesión</a>
+    ¿Ya tienes cuenta? <a href="/index.html">Iniciar sesión</a>
   </p>
 </div>
 
@@ -122,7 +122,7 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
   } else {
     okEl.textContent = '¡Cuenta creada! Redirigiendo...';
     okEl.classList.remove('hidden');
-    setTimeout(() => window.location.href = '/', 1800);
+    setTimeout(() => window.location.href = '/index.html', 1800);
   }
 });
 </script>

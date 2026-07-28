@@ -203,6 +203,9 @@
   .folders-grid { grid-template-columns: repeat(3,1fr); padding: 0 20px; }
   .search-bar { padding: 0 20px; }
   .search-results { padding: 0 20px; }
+  /* En móvil/tablet subir se hace con el botón + del menú inferior */
+  .btn-subir { display: none !important; }
+  .action-bar .search-wrap { flex: 1; width: 100%; }
 }
 @media (max-width: 600px) {
   .folders-grid { grid-template-columns: repeat(2,1fr); row-gap: 40px; padding: 0 16px; }

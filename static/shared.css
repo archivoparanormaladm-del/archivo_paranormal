@@ -140,6 +140,45 @@ body {
 
 .hidden { display: none !important; }
 
+/* Grupo de botones "movibles" de la barra superior (se ocultan en móvil) */
+.session-primary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* ══ MENÚ INFERIOR FLOTANTE (móvil / tablet) ══ */
+.mobile-nav { display: none; }
+
+@media (max-width: 900px) {
+  /* En pantallas chicas, los botones del top se salían: los movemos al
+     menú inferior y dejamos arriba solo el logo + modo/tema. */
+  .navbar-nav { display: none !important; }
+  .session-primary { display: none !important; }
+  .navbar { min-height: 52px; }
+
+  .mobile-nav {
+    display: flex; align-items: center; justify-content: space-around;
+    position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 300;
+    background: var(--bg-1); border: 1px solid var(--border);
+    border-radius: 22px; padding: 8px 6px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  }
+  .mobile-nav a {
+    display: flex; align-items: center; justify-content: center;
+    width: 46px; height: 46px; border-radius: 14px;
+    color: var(--text-3); text-decoration: none; transition: color .15s, background .15s;
+  }
+  .mobile-nav a:active { background: var(--bg-2); }
+  .mobile-nav a.activo { color: var(--red); }
+  .mobile-nav a.center {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--red-2); color: #fff;
+    box-shadow: 0 6px 18px var(--red-glow); margin-top: -20px;
+    border: 3px solid var(--bg);
+  }
+  .mobile-nav a.center:active { background: var(--red-dark); }
+
+  /* Que el contenido no quede tapado por la barra inferior */
+  body { padding-bottom: 92px; }
+}
+
 /* ══ RESPONSIVE ══ */
 @media (max-width: 768px) {
   .navbar { padding: 0 12px; height: auto; min-height: 56px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }

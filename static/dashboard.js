@@ -26,8 +26,8 @@ function detectarTipo(ext) {
 let CATEGORIAS = [];
 
 renderSessionBar().then(async me => {
-  if (!me.autenticado) { window.location.href = '/'; return; }
-
+  // Contenido público: cualquiera ve las carpetas. El login solo se pide
+  // para subir o interactuar (guardar, comentar, etc.).
   const grid = document.getElementById('folders-grid');
 
   try {
@@ -65,9 +65,17 @@ renderSessionBar().then(async me => {
 
   // Modal subida
   const btnSubir = document.getElementById('btn-subir');
-  if (btnSubir && (me.perfil === 0 || me.perfil === 1 || me.puede_subir)) {
+  const puedeSubir = me.autenticado && (me.perfil === 0 || me.perfil === 1 || me.puede_subir);
+  if (btnSubir && puedeSubir) {
     btnSubir.classList.remove('hidden');
     btnSubir.addEventListener('click', () => abrirModal());
+  }
+
+  // El botón + del menú móvil llega con ?subir=1
+  if (new URLSearchParams(location.search).get('subir') === '1') {
+    if (!me.autenticado) window.location.href = '/index.html';
+    else if (puedeSubir) abrirModal();
+    else showToast('No tienes permiso para subir archivos.', 'error');
   }
 });
 
