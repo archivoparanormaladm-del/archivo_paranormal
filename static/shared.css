@@ -16,6 +16,10 @@
   --red-dark:  #8a0f0f;
   --red-bg:    #1c0808;
   --red-glow:  rgba(230,53,53,.35);
+  /* Tinte del acento para badges/pastillas: se adapta al color de tema y
+     funciona igual en modo claro y oscuro (no es un fondo oscuro fijo). */
+  --accent-soft:    color-mix(in srgb, var(--red) 15%, transparent);
+  --accent-soft-bd: color-mix(in srgb, var(--red) 34%, transparent);
 }
 
 /* ══ MODO CLARO ══ */
@@ -76,9 +80,9 @@ body {
 .session-info { display: flex; align-items: center; gap: 8px; }
 .session-nombre { font-size: 13px; font-weight: 500; color: var(--text-2); display: flex; align-items: center; gap: 8px; }
 .session-badge {
-  background: var(--red-bg); color: var(--red);
+  background: var(--accent-soft); color: var(--red);
   font-size: 11px; font-weight: 600; padding: 2px 8px;
-  border: 1px solid var(--red-dark); border-radius: 20px;
+  border: 1px solid var(--accent-soft-bd); border-radius: 20px;
 }
 .navbar-cat-title { font-size: 14px; font-weight: 600; color: var(--red); margin-left: 8px; }
 
@@ -89,11 +93,11 @@ body {
   display: flex; align-items: center; gap: 6px;
 }
 .btn-login  { background: transparent; color: var(--red); border: 1px solid var(--red-2); }
-.btn-login:hover { background: var(--red-bg); }
+.btn-login:hover { background: var(--accent-soft); }
 .btn-register { background: var(--red-2); color: #fff; border: none; font-weight: 600; }
 .btn-register:hover { background: var(--red-dark); box-shadow: 0 0 12px var(--red-glow); }
 .btn-admin { background: var(--bg-2); color: var(--text-2); border: 1px solid var(--border); }
-.btn-admin:hover { border-color: var(--red-2); color: var(--red); background: var(--red-bg); }
+.btn-admin:hover { border-color: var(--red-2); color: var(--red); background: var(--accent-soft); }
 .btn-logout { background: transparent; color: var(--text-3); border: 1px solid var(--border); font-size: 12px; }
 .btn-logout:hover { color: var(--text-2); border-color: var(--bg-3); }
 
@@ -157,9 +161,9 @@ body {
 }
 .dlg-icon {
   width: 52px; height: 52px; margin: 0 auto 14px; border-radius: 50%;
-  background: var(--red-bg); color: var(--red);
+  background: var(--accent-soft); color: var(--red);
   display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--red-dark);
+  border: 1px solid var(--accent-soft-bd);
 }
 .dlg-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
 .dlg-text { font-size: 13px; color: var(--text-2); line-height: 1.5; margin-bottom: 20px; }

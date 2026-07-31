@@ -67,8 +67,8 @@
 .res-numero {
   font-size: 24px; font-weight: 700; color: var(--red);
   letter-spacing: 1px; margin-bottom: 10px;
-  padding: 12px; background: var(--red-bg);
-  border: 1px dashed var(--red-dark); border-radius: 10px;
+  padding: 12px; background: var(--accent-soft);
+  border: 1px dashed var(--accent-soft-bd); border-radius: 10px;
 }
 .res-msg { font-size: 13px; color: var(--text-2); }
 

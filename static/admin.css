@@ -49,8 +49,8 @@
 
 .tipo-badge {
   font-size: 11px; font-weight: 600; padding: 3px 8px;
-  background: var(--red-bg); color: var(--red);
-  border: 1px solid var(--red-dark); text-transform: uppercase;
+  background: var(--accent-soft); color: var(--red);
+  border: 1px solid var(--accent-soft-bd); text-transform: uppercase;
   border-radius: 20px; align-self: flex-start; letter-spacing: .3px;
 }
 .cat-badge {
@@ -89,7 +89,7 @@
   padding: 3px 10px; font-size: 11px; font-weight: 600;
   border: 1px solid; display: inline-block; border-radius: 20px;
 }
-.perfil-1 { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+.perfil-1 { border-color: var(--red); color: var(--red); background: var(--accent-soft); }
 .perfil-2 { border-color: #d97706; color: #fbbf24; background: rgba(217,119,6,.08); }
 .perfil-3 { border-color: #4f46e5; color: #818cf8; background: rgba(79,70,229,.08); }
 
@@ -261,7 +261,7 @@
   left: 3px; bottom: 3px; background: var(--text-2);
   transition: .2s; border-radius: 50%;
 }
-.switch input:checked + .slider { background: var(--red-bg); border-color: var(--red-2); }
+.switch input:checked + .slider { background: var(--accent-soft); border-color: var(--red-2); }
 .switch input:checked + .slider::before { transform: translateX(20px); background: var(--red); }
 
 .peso-form { display: flex; align-items: center; gap: 10px; }

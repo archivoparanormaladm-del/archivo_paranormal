@@ -9,7 +9,7 @@
   box-shadow: 0 0 12px rgba(255,0,0,.2); transition: all .2s;
   display: flex; align-items: center; gap: 8px;
 }
-.btn-subir:hover { background: var(--red-bg); box-shadow: 0 0 22px rgba(255,0,0,.5); }
+.btn-subir:hover { background: var(--accent-soft); box-shadow: 0 0 22px rgba(255,0,0,.5); }
 
 /* Grid carpetas — flex centrado (se centran también las filas incompletas) */
 .folders-grid {
@@ -196,7 +196,7 @@
   display: flex; align-items: center; gap: 12px;
 }
 .search-result-item:hover { border-color: var(--red-2); }
-.sr-tipo { font-size: 10px; font-weight: 600; padding: 2px 7px; background: var(--red-bg); color: var(--red); border: 1px solid var(--red-dark); border-radius: 20px; }
+.sr-tipo { font-size: 10px; font-weight: 600; padding: 2px 7px; background: var(--accent-soft); color: var(--red); border: 1px solid var(--accent-soft-bd); border-radius: 20px; }
 .sr-asunto { font-size: 14px; font-weight: 500; color: var(--text); }
 .sr-cat { font-size: 12px; color: var(--text-3); }
 
@@ -263,6 +263,6 @@
 .resultado-asunto { font-size: 13px; color: var(--text); }
 .resultado-cat {
   font-size: 11px; font-weight: 600; color: var(--red);
-  background: var(--red-bg); border: 1px solid var(--red-dark);
+  background: var(--accent-soft); border: 1px solid var(--accent-soft-bd);
   padding: 2px 7px; border-radius: 20px; white-space: nowrap;
 }
