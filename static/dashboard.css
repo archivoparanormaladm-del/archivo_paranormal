@@ -102,15 +102,18 @@
 
 /* Modal */
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.75);
+  position: fixed; inset: 0; background: rgba(0,0,0,.4);
   display: flex; align-items: center; justify-content: center;
-  z-index: 100; backdrop-filter: blur(4px);
+  z-index: 100; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
 .modal-box {
-  position: relative; background: var(--bg-1); border: 1px solid var(--border);
-  box-shadow: 0 24px 60px rgba(0,0,0,.8);
+  position: relative;
+  background: linear-gradient(var(--glass-tint), var(--glass-tint)), color-mix(in srgb, var(--bg-1) 74%, transparent);
+  backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-bd);
+  box-shadow: 0 34px 80px rgba(0,0,0,.4), inset 0 1px 0 var(--glass-hi);
   width: 100%; max-width: 460px; padding: 28px;
-  max-height: 90vh; overflow-y: auto; border-radius: 14px;
+  max-height: 90vh; overflow-y: auto; border-radius: 20px;
 }
 .modal-close {
   position: absolute; top: 12px; right: 14px;

@@ -20,6 +20,16 @@
      funciona igual en modo claro y oscuro (no es un fondo oscuro fijo). */
   --accent-soft:    color-mix(in srgb, var(--red) 15%, transparent);
   --accent-soft-bd: color-mix(in srgb, var(--red) 34%, transparent);
+
+  /* ── Liquid glass (vidrio esmerilado con profundidad) ──
+     Se arma con el fondo y el acento actuales, así se armoniza al
+     cambiar de modo (claro/oscuro) y de tema (color). */
+  --glass-blur:   blur(18px) saturate(180%);
+  --glass-bg:     color-mix(in srgb, var(--bg-1) 55%, transparent);
+  --glass-bd:     color-mix(in srgb, var(--text) 14%, transparent);
+  --glass-hi:     color-mix(in srgb, #ffffff 30%, transparent);
+  --glass-shadow: 0 10px 30px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.10);
+  --glass-tint:   color-mix(in srgb, var(--red) 10%, transparent);
 }
 
 /* ══ MODO CLARO ══ */
@@ -38,7 +48,7 @@
   --text-2: #52525b;
   --text-3: #8a8a92;
 }
-:root[data-modo="claro"] .navbar { background: #ffffff; }
+:root[data-modo="claro"] .navbar { background: color-mix(in srgb, #ffffff 65%, transparent); }
 :root[data-modo="claro"] .tabs   { background: #ececee; }
 /* En claro, atenuar el ruido VHS para que no ensucie el fondo blanco */
 :root[data-modo="claro"] .vhs-overlay { opacity: .12; }
@@ -58,8 +68,10 @@ body {
   display: flex; align-items: center;
   justify-content: space-between;
   padding: 0 20px; height: 56px;
-  background: #0e0e0e;
-  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 65%, transparent);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-bd);
   position: sticky; top: 0; z-index: 90;
   gap: 12px;
 }
@@ -68,14 +80,16 @@ body {
 .navbar-nav { display: flex; align-items: center; gap: 4px; flex: 1; flex-wrap: wrap; }
 .nav-btn {
   font-family: inherit; font-size: 13px; font-weight: 500;
-  padding: 6px 12px; border: none; cursor: pointer;
-  transition: background .15s, color .15s;
-  background: transparent; color: var(--text-2);
-  border-radius: 6px; display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; cursor: pointer;
+  transition: all .15s; color: var(--text-2);
+  border-radius: 10px; display: flex; align-items: center; gap: 6px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-bd);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
 }
-.nav-btn:hover { background: var(--bg-3); color: var(--text); }
-.nav-btn-back, .nav-btn-home { border: 1px solid var(--border); }
-.nav-btn-back:hover, .nav-btn-home:hover { border-color: var(--red-2); color: var(--red); }
+.nav-btn:hover { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, transparent); transform: translateY(-1px); }
 .navbar-session { display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
 .session-info { display: flex; align-items: center; gap: 8px; }
 .session-nombre { font-size: 13px; font-weight: 500; color: var(--text-2); display: flex; align-items: center; gap: 8px; }
@@ -89,17 +103,30 @@ body {
 .btn-top {
   font-family: inherit; font-size: 13px; font-weight: 500;
   padding: 7px 14px; cursor: pointer;
-  transition: all .15s; border-radius: 6px;
+  transition: all .15s; border-radius: 10px;
   display: flex; align-items: center; gap: 6px;
+  /* Vidrio esmerilado con brillo superior (profundidad) */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-bd);
+  color: var(--text-2);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
 }
-.btn-login  { background: transparent; color: var(--red); border: 1px solid var(--red-2); }
+.btn-top:hover { transform: translateY(-1px); box-shadow: 0 14px 34px rgba(0,0,0,.22), inset 0 1px 0 var(--glass-hi); color: var(--text); }
+.btn-top:active { transform: translateY(0); }
+.btn-login  { color: var(--red); border-color: color-mix(in srgb, var(--red) 45%, transparent); }
 .btn-login:hover { background: var(--accent-soft); }
-.btn-register { background: var(--red-2); color: #fff; border: none; font-weight: 600; }
-.btn-register:hover { background: var(--red-dark); box-shadow: 0 0 12px var(--red-glow); }
-.btn-admin { background: var(--bg-2); color: var(--text-2); border: 1px solid var(--border); }
+.btn-register {
+  color: #fff; border: 1px solid color-mix(in srgb, #fff 30%, transparent); font-weight: 600;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--red) 92%, white) 0%, var(--red-2) 100%);
+  box-shadow: 0 8px 22px var(--red-glow), inset 0 1px 0 color-mix(in srgb, #fff 45%, transparent);
+}
+.btn-register:hover { filter: brightness(1.05); box-shadow: 0 12px 30px var(--red-glow), inset 0 1px 0 color-mix(in srgb, #fff 45%, transparent); }
+.btn-admin { color: var(--text-2); }
 .btn-admin:hover { border-color: var(--red-2); color: var(--red); background: var(--accent-soft); }
-.btn-logout { background: transparent; color: var(--text-3); border: 1px solid var(--border); font-size: 12px; }
-.btn-logout:hover { color: var(--text-2); border-color: var(--bg-3); }
+.btn-logout { color: var(--text-2); font-size: 12px; }
+.btn-logout:hover { color: var(--text); }
 
 /* ══ TOAST ══ */
 .toast {
@@ -150,14 +177,18 @@ body {
 /* ══ DIÁLOGO (requiere cuenta para subir) ══ */
 .dlg-overlay {
   position: fixed; inset: 0; z-index: 500; padding: 20px;
-  background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
   animation: dlg-in .15s ease;
 }
 @keyframes dlg-in { from { opacity: 0; } to { opacity: 1; } }
 .dlg-box {
-  background: var(--bg-1); border: 1px solid var(--border);
-  border-radius: 16px; padding: 26px 24px; max-width: 340px; width: 100%;
-  text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.5);
+  background: linear-gradient(var(--glass-tint), var(--glass-tint)), color-mix(in srgb, var(--bg-1) 72%, transparent);
+  backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-bd);
+  border-radius: 20px; padding: 26px 24px; max-width: 340px; width: 100%;
+  text-align: center;
+  box-shadow: 0 30px 70px rgba(0,0,0,.35), inset 0 1px 0 var(--glass-hi);
 }
 .dlg-icon {
   width: 52px; height: 52px; margin: 0 auto 14px; border-radius: 50%;
@@ -196,9 +227,11 @@ body {
   .mobile-nav {
     display: flex; align-items: center; justify-content: space-around;
     position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 300;
-    background: var(--bg-1); border: 1px solid var(--border);
-    border-radius: 22px; padding: 8px 6px;
-    box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    background: linear-gradient(var(--glass-tint), var(--glass-tint)), color-mix(in srgb, var(--bg-1) 62%, transparent);
+    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-bd);
+    border-radius: 24px; padding: 8px 6px;
+    box-shadow: 0 12px 34px rgba(0,0,0,.28), inset 0 1px 0 var(--glass-hi);
   }
   .mobile-nav a {
     display: flex; align-items: center; justify-content: center;
@@ -241,8 +274,10 @@ body {
 
 .tema-dropdown {
   position: absolute; top: calc(100% + 6px); right: 0;
-  background: var(--bg-1); border: 1px solid var(--border);
-  border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.6);
+  background: linear-gradient(var(--glass-tint), var(--glass-tint)), color-mix(in srgb, var(--bg-1) 70%, transparent);
+  backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-bd);
+  border-radius: 14px; box-shadow: 0 18px 40px rgba(0,0,0,.35), inset 0 1px 0 var(--glass-hi);
   z-index: 200; min-width: 180px; overflow: hidden;
   animation: dropdown-in .15s ease;
 }
