@@ -165,7 +165,8 @@ function aplicarModo(modo) {
 }
 
 function cargarModo() {
-  const modo = localStorage.getItem('modo') || 'oscuro';
+  // Claro es el modo por defecto; el usuario puede cambiar a oscuro y se recuerda.
+  const modo = localStorage.getItem('modo') || 'claro';
   document.documentElement.setAttribute('data-modo', modo);
   // El logo se ajusta cuando el DOM esté listo (por si el script corre antes).
   if (document.readyState === 'loading') {
