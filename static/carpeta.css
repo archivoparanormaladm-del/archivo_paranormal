@@ -39,10 +39,14 @@
 }
 .lista-item:hover  { background: var(--bg-2); }
 .lista-item.activo {
-  background: var(--red-bg);
-  border-left: 2px solid var(--red);
-  padding-left: 14px;
+  /* Resaltado adaptable a claro/oscuro y al color de tema (tinte del acento) */
+  background: rgba(230, 53, 53, .12);                       /* respaldo */
+  background: color-mix(in srgb, var(--red) 16%, transparent);
+  border-left: 3px solid var(--red);
+  padding-left: 13px;
 }
+.lista-item.activo .item-asunto { color: var(--text); font-weight: 600; }
+.lista-item.activo .item-usuario { color: var(--red); }
 
 /* Miniatura de previsualización (esquinas redondeadas) */
 .item-thumb {
