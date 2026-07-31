@@ -429,6 +429,7 @@ def archivos_por_categoria(categoria):
             "descripcion": f["descripcion"],
             "url":         f"/api/archivo/{f['nombre_guardado']}",
             "fecha":       f["created_at"].strftime("%d/%m/%Y"),
+            "visitas":     f["visitas_count"] or 0,
             "subido_por":  "" if categoria == "Modo Incognito" else (f["subido_por"] or ""),
         })
     return jsonify(resultado)

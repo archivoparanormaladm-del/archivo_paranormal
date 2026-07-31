@@ -53,6 +53,10 @@ async function mostrarDetalle(a) {
         ${a.subido_por ? `<span class="meta-user">@${a.subido_por}</span>` : ''}
         <span class="meta-fecha">${a.fecha}</span>
         <span class="meta-tipo">${a.tipo}</span>
+        <span class="meta-vistas">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span id="vistas-count">${a.visitas || 0}</span>
+        </span>
       </div>
     </div>
     <div class="detalle-media">${mediaHtml}${fsBtnHtml}</div>
@@ -105,6 +109,12 @@ async function mostrarDetalle(a) {
   archivoIdActual = a.id;
   cargarReacciones(a.id);
   cargarComentarios(a.id);
+
+  // Registrar visualización (y reflejarla en el contador al instante)
+  fetch(`/api/archivos/${a.id}/visita`, { method: 'POST' }).catch(() => {});
+  a.visitas = (a.visitas || 0) + 1;
+  const vistasEl = document.getElementById('vistas-count');
+  if (vistasEl) vistasEl.textContent = a.visitas;
 
   // Like / Dislike
   detalleConten.querySelector('#btn-like').addEventListener('click', () => reaccionar(a.id, 'like'));
@@ -212,6 +222,14 @@ async function enviarComentario(archivoId) {
   }
 }
 
+/* ── Miniatura de previsualización ──────────────────────── */
+function miniatura(a) {
+  if (a.tipo === 'imagen') return `<img src="${a.url}" alt="" loading="lazy">`;
+  if (a.tipo === 'video')  return `<video src="${a.url}#t=0.1" muted preload="metadata"></video><span class="thumb-play"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>`;
+  if (a.tipo === 'audio')  return `<span class="thumb-ph"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>`;
+  return `<span class="thumb-ph"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>`;
+}
+
 /* ── Render lista izquierda ─────────────────────────────── */
 function renderLista(archivos) {
   listaCount.textContent = `${archivos.length} archivo${archivos.length !== 1 ? 's' : ''}`;
@@ -225,14 +243,16 @@ function renderLista(archivos) {
     item.className = 'lista-item';
     item.dataset.id = a.id;
     item.innerHTML = `
-      <div class="item-top">
-        <span class="item-usuario">${a.subido_por ? '@' + a.subido_por : '—'}</span>
-        <span class="item-fecha">${a.fecha}</span>
-      </div>
-      <p class="item-asunto ${!a.asunto ? 'sin-asunto' : ''}">${a.asunto || 'Sin asunto'}</p>
-      <div class="item-bottom">
-        <span class="item-tipo">${a.tipo}</span>
-        <span class="item-nombre">${a.nombre}</span>
+      <div class="item-thumb">${miniatura(a)}</div>
+      <div class="item-info">
+        <div class="item-top">
+          <span class="item-usuario">${a.subido_por ? '@' + a.subido_por : 'Usuario'}</span>
+          <span class="item-fecha">${a.fecha}</span>
+        </div>
+        <p class="item-asunto ${!a.asunto ? 'sin-asunto' : ''}">${a.asunto || 'Sin asunto'}</p>
+        <div class="item-bottom">
+          <span class="item-tipo">Tipo: ${a.tipo}</span>
+        </div>
       </div>
     `;
     item.addEventListener('click', () => mostrarDetalle(a));
