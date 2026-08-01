@@ -171,9 +171,8 @@ function renderBottomNav(me) {
   const path = window.location.pathname;
   const esInicio = path === '/' || path.endsWith('/dashboard.html');
 
-  // Acción del botón + (subir)
+  // Acción del botón + (subir). Se maneja por click (abre el modal en el lugar).
   const puedeSubir = me.autenticado && (me.perfil === 0 || me.perfil === 1 || me.puede_subir);
-  const hrefSubir = me.autenticado ? '/dashboard.html?subir=1' : '/index.html';
 
   const items = [];
   items.push({ href: '/dashboard.html', icon: 'home', label: 'Inicio', activo: esInicio });
@@ -188,7 +187,7 @@ function renderBottomNav(me) {
     items.push({ href: '/soporte.html', icon: 'soporte', label: 'Soporte', activo: path.endsWith('/soporte.html') });
   }
 
-  items.push({ href: hrefSubir, icon: 'plus', label: 'Subir', center: true });
+  items.push({ href: '#', icon: 'plus', label: 'Subir', center: true });
 
   if (me.autenticado) {
     items.push({ href: '/soporte.html', icon: 'soporte', label: 'Soporte', activo: path.endsWith('/soporte.html') });
@@ -206,13 +205,15 @@ function renderBottomNav(me) {
   ).join('');
   document.body.appendChild(nav);
 
-  // Si NO hay sesión, el + no navega: muestra un diálogo pidiendo cuenta.
-  if (!me.autenticado) {
-    const centro = nav.querySelector('a.center');
-    if (centro) {
-      centro.setAttribute('href', '#');
-      centro.addEventListener('click', e => { e.preventDefault(); mostrarDialogoSubir(); });
-    }
+  // El + abre el modal de subida EN EL LUGAR (no navega). Según sesión/permiso:
+  const centro = nav.querySelector('a.center');
+  if (centro) {
+    centro.addEventListener('click', e => {
+      e.preventDefault();
+      if (!me.autenticado) mostrarDialogoSubir();
+      else if (puedeSubir) abrirModalSubida();
+      else showToast('No tienes permiso para subir archivos.', 'error');
+    });
   }
 }
 
@@ -237,4 +238,128 @@ function mostrarDialogoSubir() {
   const cerrar = () => ov.remove();
   ov.addEventListener('click', e => { if (e.target === ov) cerrar(); });
   ov.querySelector('.dlg-close').addEventListener('click', cerrar);
+}
+
+/* ── Modal de subida (disponible en toda la app, se abre en el lugar) ── */
+const EXTENSIONES = {
+  imagen: ['jpg','jpeg','png','gif','webp','bmp','svg'],
+  video:  ['mp4','mov','avi','mkv','webm','wmv'],
+  audio:  ['mp3','wav','ogg','flac','m4a','aac']
+};
+const TODAS_EXT = [...EXTENSIONES.imagen, ...EXTENSIONES.video, ...EXTENSIONES.audio];
+function getExt(nombre) { return nombre.split('.').pop().toLowerCase(); }
+function detectarTipo(ext) {
+  if (EXTENSIONES.imagen.includes(ext)) return 'imagen';
+  if (EXTENSIONES.video.includes(ext))  return 'video';
+  if (EXTENSIONES.audio.includes(ext))  return 'audio';
+  return null;
+}
+
+async function abrirModalSubida(catDefault) {
+  const existente = document.getElementById('modal-subida');
+  if (existente) { existente.classList.remove('hidden'); return; }
+
+  let cats = [];
+  try { cats = await fetch('/api/categorias').then(r => r.json()); }
+  catch { cats = ['Fantasmas','Duendes','Exorcismo','Poltergeist','Psicofonias','Ouija','Animales','Brujeria','Modo Incognito']; }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay'; overlay.id = 'modal-subida';
+  overlay.innerHTML = `
+    <div class="modal-box">
+      <button class="modal-close" id="modal-close-btn">✕</button>
+      <p class="modal-title">Subir archivo</p>
+      <p class="modal-subtitle">Formatos: JPG, PNG, GIF, WEBP, MP4, MOV, AVI, MKV, MP3, WAV, OGG, FLAC, M4A</p>
+      <form id="upload-form">
+        <label>Archivo <span style="color:var(--red)">*</span></label>
+        <input type="file" id="archivo-input" accept=".jpg,.jpeg,.png,.gif,.webp,.bmp,.svg,.mp4,.mov,.avi,.mkv,.webm,.wmv,.mp3,.wav,.ogg,.flac,.m4a,.aac" required>
+        <p class="tipo-detectado" id="tipo-detectado"></p>
+        <p class="error-msg hidden" id="ext-error">Extensión no permitida. Solo imágenes, videos y audios.</p>
+
+        <label>Categoría <span style="color:var(--red)">*</span></label>
+        <select id="categoria-input" required>
+          <option value="">— Selecciona una categoría —</option>
+          ${cats.map(c => `<option value="${c}">${c}</option>`).join('')}
+        </select>
+        <div class="aviso-incognito hidden" id="aviso-incognito">
+          <strong>Modo Incógnito:</strong> Tu nombre de usuario no será visible en esta publicación.
+        </div>
+
+        <label>Asunto <span style="color:var(--red)">*</span></label>
+        <input type="text" id="asunto-input" maxlength="200" placeholder="Título o asunto del archivo" required>
+
+        <label>Descripción</label>
+        <textarea id="desc-input" rows="3" maxlength="2000" placeholder="Descripción opcional..."></textarea>
+        <p class="word-count" id="word-count">0 / 200 palabras</p>
+
+        <p class="error-msg hidden" id="form-error"></p>
+        <button type="submit" class="btn-confirmar">Subir archivo</button>
+      </form>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const cerrar = () => overlay.remove();
+  document.getElementById('modal-close-btn').addEventListener('click', cerrar);
+  overlay.addEventListener('click', e => { if (e.target === overlay) cerrar(); });
+  if (catDefault) document.getElementById('categoria-input').value = catDefault;
+
+  document.getElementById('archivo-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    const extEl = document.getElementById('ext-error');
+    const tipoEl = document.getElementById('tipo-detectado');
+    if (!file) return;
+    const ext = getExt(file.name);
+    if (!TODAS_EXT.includes(ext)) { extEl.classList.remove('hidden'); tipoEl.textContent = ''; e.target.value = ''; return; }
+    extEl.classList.add('hidden');
+    const tipo = detectarTipo(ext);
+    tipoEl.textContent = tipo ? 'Tipo detectado: ' + tipo : '';
+  });
+
+  document.getElementById('categoria-input').addEventListener('change', e => {
+    const av = document.getElementById('aviso-incognito');
+    e.target.value === 'Modo Incognito' ? av.classList.remove('hidden') : av.classList.add('hidden');
+  });
+
+  document.getElementById('desc-input').addEventListener('input', e => {
+    const words = e.target.value.trim().split(/\s+/).filter(Boolean).length;
+    const wc = document.getElementById('word-count');
+    wc.textContent = words + ' / 200 palabras';
+    wc.style.color = words > 200 ? 'var(--red)' : 'var(--text-3)';
+  });
+
+  document.getElementById('upload-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const errEl = document.getElementById('form-error');
+    errEl.classList.add('hidden');
+    const archivo = document.getElementById('archivo-input').files[0];
+    const categoria = document.getElementById('categoria-input').value;
+    const asunto = document.getElementById('asunto-input').value.trim();
+    const desc = document.getElementById('desc-input').value.trim();
+
+    if (!archivo) { errEl.textContent = 'Debes seleccionar un archivo.'; errEl.classList.remove('hidden'); return; }
+    if (!categoria) { errEl.textContent = 'Debes seleccionar una categoría.'; errEl.classList.remove('hidden'); return; }
+    if (!asunto) { errEl.textContent = 'El asunto es obligatorio.'; errEl.classList.remove('hidden'); return; }
+    const ext = getExt(archivo.name);
+    if (!TODAS_EXT.includes(ext)) { errEl.textContent = 'Extensión de archivo no permitida.'; errEl.classList.remove('hidden'); return; }
+    const words = desc.split(/\s+/).filter(Boolean).length;
+    if (words > 200) { errEl.textContent = 'La descripción supera las 200 palabras.'; errEl.classList.remove('hidden'); return; }
+    if (archivo.size > 50 * 1024 * 1024) { errEl.textContent = 'El archivo supera los 50MB.'; errEl.classList.remove('hidden'); return; }
+
+    const fd = new FormData();
+    fd.append('file', archivo); fd.append('categoria', categoria);
+    fd.append('asunto', asunto); fd.append('descripcion', desc);
+
+    const btn = e.target.querySelector('.btn-confirmar');
+    btn.disabled = true; btn.textContent = 'Subiendo...';
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.ok) { cerrar(); showToast('Archivo enviado a revisión. El admin lo aprobará pronto.'); }
+      else { errEl.textContent = data.error || 'Error al subir archivo.'; errEl.classList.remove('hidden'); }
+    } catch {
+      errEl.textContent = 'No se pudo conectar con el servidor. Inténtalo de nuevo.'; errEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Subir archivo';
+    }
+  });
 }

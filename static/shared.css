@@ -214,6 +214,70 @@ body {
 }
 .dlg-close:hover { color: var(--text-2); }
 
+/* ══ MODAL DE SUBIDA (compartido en toda la app) ══ */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 400; padding: 16px;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.modal-box {
+  position: relative;
+  background: linear-gradient(var(--glass-tint), var(--glass-tint)), color-mix(in srgb, var(--bg-1) 74%, transparent);
+  backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-bd);
+  box-shadow: 0 34px 80px rgba(0,0,0,.4), inset 0 1px 0 var(--glass-hi);
+  width: 100%; max-width: 460px; padding: 28px;
+  max-height: 90vh; overflow-y: auto; border-radius: 20px;
+}
+.modal-close {
+  position: absolute; top: 12px; right: 14px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  color: var(--text-3); font-size: 14px; cursor: pointer;
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-close:hover { background: var(--bg-3); color: var(--text); }
+.modal-title  { color: var(--text); text-align: center; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.modal-subtitle { text-align: center; color: var(--text-3); font-size: 12px; margin-bottom: 22px; line-height: 1.5; }
+
+#upload-form { display: flex; flex-direction: column; }
+#upload-form label {
+  font-size: 11px; font-weight: 600; color: var(--text-2);
+  margin-bottom: 6px; letter-spacing: .4px; text-transform: uppercase;
+}
+#upload-form input[type="file"],
+#upload-form select,
+#upload-form input[type="text"],
+#upload-form textarea {
+  background: var(--bg-2); border: 1px solid var(--border);
+  color: var(--text); font-family: inherit; font-size: 14px;
+  padding: 10px 12px; margin-bottom: 14px; outline: none;
+  border-radius: 8px; transition: border-color .15s, box-shadow .15s;
+}
+#upload-form input:focus, #upload-form select:focus, #upload-form textarea:focus {
+  border-color: var(--red-2); box-shadow: 0 0 0 3px rgba(192,32,32,.12);
+}
+#upload-form textarea { resize: vertical; }
+
+.tipo-detectado { font-size: 12px; color: var(--text-3); margin: -8px 0 12px; min-height: 14px; }
+.word-count { font-size: 11px; color: var(--text-3); margin: -8px 0 14px; text-align: right; }
+.error-msg { color: #f87171; font-size: 13px; margin-bottom: 12px; padding: 10px 12px; background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2); border-radius: 6px; }
+
+.btn-confirmar {
+  background: var(--red-2); color: #fff; font-family: inherit;
+  font-size: 14px; font-weight: 600; padding: 11px; border: none;
+  cursor: pointer; border-radius: 8px; transition: background .2s, box-shadow .2s;
+}
+.btn-confirmar:hover { background: var(--red-dark); box-shadow: 0 0 20px var(--red-glow); }
+
+.aviso-incognito {
+  background: rgba(99,102,241,.08); border: 1px solid rgba(99,102,241,.25);
+  border-left: 3px solid #6366f1; color: #a5b4fc;
+  font-size: 13px; line-height: 1.6; padding: 12px 14px; margin-bottom: 14px; border-radius: 8px;
+}
+.aviso-incognito strong { color: #818cf8; }
+
 /* ══ MENÚ INFERIOR FLOTANTE (móvil / tablet) ══ */
 .mobile-nav { display: none; }
 
