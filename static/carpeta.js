@@ -301,7 +301,7 @@ async function cargarComentarios(archivoId) {
   // Botones eliminar comentario (solo admin)
   wrap.querySelectorAll('.com-btn-del').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('¿Eliminar este comentario?')) return;
+      if (!(await confirmar('¿Eliminar este comentario?', 'Eliminar', true))) return;
       const res = await fetch('/api/comentarios/' + btn.dataset.id, { method: 'DELETE' });
       if ((await res.json()).ok) cargarComentarios(archivoIdActual);
     });

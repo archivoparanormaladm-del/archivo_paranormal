@@ -16,6 +16,29 @@ function showToast(msg, type = 'success') {
   setTimeout(() => toast.remove(), 3500);
 }
 
+// ── Confirmación propia (reemplaza el confirm() nativo, que el navegador
+//    puede bloquear en silencio y hacer que "no pase nada") ──────────
+function confirmar(mensaje, textoOk = 'Confirmar', peligro = false) {
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.className = 'dlg-overlay';
+    ov.innerHTML = `
+      <div class="dlg-box">
+        <p style="font-size:14px;color:var(--text);line-height:1.5;margin-bottom:20px">${mensaje}</p>
+        <div class="dlg-actions">
+          <button class="dlg-btn dlg-primary" data-ok
+                  style="${peligro ? 'background:var(--red-2);color:#fff' : ''}">${textoOk}</button>
+          <button class="dlg-btn dlg-secondary" data-cancel>Cancelar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+    const done = v => { ov.remove(); resolve(v); };
+    ov.querySelector('[data-ok]').onclick = () => done(true);
+    ov.querySelector('[data-cancel]').onclick = () => done(false);
+    ov.addEventListener('click', e => { if (e.target === ov) done(false); });
+  });
+}
+
 // ── Loading ───────────────────────────────────────────────
 function showLoading() {
   const el = document.createElement('div');

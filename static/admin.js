@@ -85,16 +85,26 @@ async function cargarPendientes() {
   wrap.querySelectorAll('.btn-accion[data-accion]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const { id, accion } = btn.dataset;
-      const confirmar = confirm(`¿${accion === 'aprobar' ? 'Aprobar' : 'Rechazar'} este archivo?`);
-      if (!confirmar) return;
+      const esAprobar = accion === 'aprobar';
+      const ok = await confirmar(
+        `¿${esAprobar ? 'Aprobar' : 'Rechazar'} este archivo?`,
+        esAprobar ? 'Aprobar' : 'Rechazar',
+        !esAprobar);
+      if (!ok) return;
 
       btn.disabled = true;
-      const res = await fetch(`/api/admin/${accion}/${id}`, { method: 'POST' });
-      const data = await res.json();
-      if (data.ok) {
-        cargarPendientes();
-      } else {
-        alert('Error: ' + (data.error || 'desconocido'));
+      try {
+        const res = await fetch(`/api/admin/${accion}/${id}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          showToast(esAprobar ? 'Archivo aprobado y publicado.' : 'Archivo rechazado.');
+          cargarPendientes();
+        } else {
+          showToast('Error: ' + (data.error || 'desconocido'), 'error');
+          btn.disabled = false;
+        }
+      } catch {
+        showToast('No se pudo conectar con el servidor.', 'error');
         btn.disabled = false;
       }
     });
@@ -191,7 +201,7 @@ async function cargarUsuarios() {
     sel.addEventListener('change', async () => {
       const uid    = sel.dataset.uid;
       const perfil = parseInt(sel.value);
-      if (!confirm(`¿Cambiar perfil del usuario a ${['Super Admin','Admin','Estándar','Restringido'][perfil]}?`)) {
+      if (!(await confirmar(`¿Cambiar perfil del usuario a ${['Super Admin','Admin','Estándar','Restringido'][perfil]}?`, 'Cambiar'))) {
         cargarUsuarios(); return;
       }
       try {
@@ -223,7 +233,7 @@ async function cargarUsuarios() {
       }
 
       if (accion === 'eliminar') {
-        if (!confirm('¿Eliminar este usuario permanentemente?')) return;
+        if (!(await confirmar('¿Eliminar este usuario permanentemente?', 'Eliminar', true))) return;
         const res  = await fetch(`/api/admin/usuarios/${uid}`, { method: 'DELETE' });
         const data = await res.json();
         if (data.ok) cargarUsuarios(); else alert('Error: ' + data.error);
@@ -405,7 +415,7 @@ async function cargarPublicados() {
         modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
         modal.querySelectorAll('.del-com-admin').forEach(btn => {
           btn.addEventListener('click', async () => {
-            if (!confirm('Eliminar comentario?')) return;
+            if (!(await confirmar('¿Eliminar este comentario?', 'Eliminar', true))) return;
             const r = await fetch('/api/comentarios/' + btn.dataset.cid, { method: 'DELETE' });
             if ((await r.json()).ok) { modal.remove(); cargarPublicados(); }
           });
@@ -425,7 +435,7 @@ async function cargarPublicados() {
         if (data.ok) cargarPublicados(); else alert('Error: ' + (data.error || 'desconocido'));
 
       } else if (accion === 'eliminar-pub') {
-        if (!confirm('¿Eliminar este archivo permanentemente?')) return;
+        if (!(await confirmar('¿Eliminar este archivo permanentemente?', 'Eliminar', true))) return;
         const res = await fetch(`/api/admin/archivos/${id}`, { method: 'DELETE' });
         if ((await res.json()).ok) cargarPublicados();
       }
@@ -549,7 +559,7 @@ async function cargarCategorias() {
 
   wrap.querySelectorAll('.btn-mini-rojo:not([disabled])').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm(`¿Eliminar la categoría "${btn.dataset.nombre}"?`)) return;
+      if (!(await confirmar(`¿Eliminar la categoría "${btn.dataset.nombre}"?`, 'Eliminar', true))) return;
       const res  = await fetch('/api/admin/categorias/' + btn.dataset.id, { method: 'DELETE' });
       const data = await res.json();
       if (data.ok) cargarCategorias();
