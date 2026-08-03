@@ -107,9 +107,8 @@
 .detalle-contenido { display: flex; flex-direction: column; flex: 1; }
 
 .detalle-header {
-  padding: 20px 28px 18px;
+  padding: 4px 28px 18px;
   border-bottom: 1px solid var(--border); flex-shrink: 0;
-  background: #0e0e0e;
 }
 .detalle-asunto {
   font-size: 18px; font-weight: 700; color: var(--text);
@@ -336,8 +335,7 @@
 }
 
 /* ══ MODO CLARO (overrides de fondos oscuros hardcodeados) ══ */
-:root[data-modo="claro"] .panel-lista,
-:root[data-modo="claro"] .detalle-header { background: #ffffff; }
+:root[data-modo="claro"] .panel-lista { background: #ffffff; }
 :root[data-modo="claro"] .detalle-media  { background: #e4e4e7; }
 :root[data-modo="claro"] .btn-fs-detalle { background: rgba(255,255,255,.85); color: var(--text-2); }
 

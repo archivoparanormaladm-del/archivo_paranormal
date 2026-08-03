@@ -156,19 +156,19 @@ async function mostrarDetalle(a) {
   </button>` : '';
 
   detalleConten.innerHTML = `
+    <div class="detalle-media">${mediaHtml}${fsBtnHtml}</div>
     <div class="detalle-header">
       <p class="detalle-asunto ${!a.asunto ? 'sin-asunto' : ''}">${a.asunto || 'Sin asunto'}</p>
       <div class="detalle-meta">
-        ${a.subido_por ? `<span class="meta-user">@${a.subido_por}</span>` : ''}
+        <span class="meta-user">${a.subido_por ? '@' + a.subido_por : 'Usuario'}</span>
         <span class="meta-fecha">${a.fecha}</span>
         <span class="meta-tipo">${a.tipo}</span>
         <span class="meta-vistas">
           <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-          <span id="vistas-count">${a.visitas || 0}</span>
+          <span id="vistas-count">${a.visitas || 0}</span> visualizaciones
         </span>
       </div>
     </div>
-    <div class="detalle-media">${mediaHtml}${fsBtnHtml}</div>
     <div class="detalle-acciones">
       <button class="acc-btn" id="btn-like" title="Me gusta">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>
