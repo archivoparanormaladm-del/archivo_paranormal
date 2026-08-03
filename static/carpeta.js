@@ -40,7 +40,7 @@ const PICON = {
 
 function reproductorHtml(tipo, url) {
   const media = tipo === 'video'
-    ? `<video class="gp-media" src="${url}" playsinline preload="metadata"></video>`
+    ? `<video class="gp-blur" src="${url}" muted playsinline preload="auto" tabindex="-1"></video><video class="gp-media" src="${url}" playsinline preload="metadata"></video>`
     : `<div class="gp-audio-art">${PICON.music}</div><audio class="gp-media" src="${url}" preload="metadata"></audio>`;
   return `
     <div class="glass-player ${tipo === 'audio' ? 'gp-is-audio' : ''}">
@@ -79,6 +79,15 @@ function activarReproductor(root) {
   const btnMute = q('.gp-mute'), vol = q('.gp-vol');
   const seek = q('.gp-seek'), cur = q('.gp-cur'), dur = q('.gp-dur');
   const btnSpeed = q('.gp-speed'), speedLbl = q('.gp-speed-lbl'), btnFs = q('.gp-fs');
+  const blur = q('.gp-blur');
+
+  // Capa desenfocada de fondo (relleno "ambient") que sigue al video principal
+  if (blur) {
+    media.addEventListener('play',   () => { blur.play().catch(() => {}); });
+    media.addEventListener('pause',  () => blur.pause());
+    media.addEventListener('seeking',() => { try { blur.currentTime = media.currentTime; } catch {} });
+    media.addEventListener('ratechange', () => { blur.playbackRate = media.playbackRate; });
+  }
 
   const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
   const pinta = (el, pct) => el.style.setProperty('--pct', pct + '%');
@@ -136,7 +145,7 @@ async function mostrarDetalle(a) {
   document.querySelector(`.lista-item[data-id="${a.id}"]`)?.classList.add('activo');
 
   let mediaHtml = '';
-  if (a.tipo === 'imagen')      mediaHtml = `<img src="${a.url}" alt="${a.nombre}">`;
+  if (a.tipo === 'imagen')      mediaHtml = `<div class="media-blur" style="background-image:url('${a.url.replace(/'/g, "%27")}')"></div><img class="media-main" src="${a.url}" alt="${a.nombre}">`;
   else if (a.tipo === 'video')  mediaHtml = reproductorHtml('video', a.url);
   else if (a.tipo === 'audio')  mediaHtml = reproductorHtml('audio', a.url);
   else mediaHtml = `<div class="audio-bg"><a href="${a.url}" target="_blank" style="color:var(--red)">Descargar ↗</a></div>`;

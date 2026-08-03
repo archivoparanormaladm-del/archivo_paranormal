@@ -135,6 +135,16 @@
   margin: 18px 28px; border-radius: 18px;
 }
 .detalle-media img  { max-width: 100%; max-height: 55vh; object-fit: contain; display: block; }
+
+/* Relleno "ambient": versión desenfocada del propio contenido detrás,
+   para que no queden barras negras con formatos verticales/panorámicos */
+.media-blur {
+  position: absolute; inset: 0; z-index: 0;
+  background-size: cover; background-position: center;
+  filter: blur(40px) saturate(1.4) brightness(.82);
+  transform: scale(1.2);
+}
+.detalle-media img.media-main { position: relative; z-index: 1; }
 .detalle-media video { max-width: 100%; max-height: 55vh; display: block; }
 .detalle-media audio { width: 100%; max-width: 500px; padding: 30px 20px; }
 .detalle-media .audio-bg {
@@ -239,9 +249,16 @@
 .com-btn-del:hover { color: #f87171; background: rgba(239,68,68,.08); }
 
 /* ══ REPRODUCTOR LIQUID GLASS (video / audio) ══ */
-.glass-player { position: relative; width: 100%; display: flex; align-items: center; justify-content: center; }
+.glass-player { position: relative; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .glass-player .gp-media { width: 100%; max-height: 55vh; display: block; }
-.glass-player video.gp-media { object-fit: contain; background: #000; cursor: pointer; }
+.glass-player video.gp-media { object-fit: contain; cursor: pointer; position: relative; z-index: 1; }
+/* Fondo desenfocado del video (ambient fill) */
+.glass-player video.gp-blur {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; z-index: 0; pointer-events: none;
+  filter: blur(40px) saturate(1.4) brightness(.78);
+  transform: scale(1.2);
+}
 
 /* Barra de controles (vidrio esmerilado) */
 .gp-bar {
