@@ -76,7 +76,7 @@ body {
   gap: 12px;
 }
 .navbar-logo { display: flex; align-items: center; gap: 10px; cursor: pointer; flex-shrink: 0; text-decoration: none; }
-.navbar-logo img { height: 34px; width: auto; }
+.navbar-logo img { height: 46px; width: auto; }
 .navbar-nav { display: flex; align-items: center; gap: 4px; flex: 1; flex-wrap: wrap; }
 .nav-btn {
   font-family: inherit; font-size: 13px; font-weight: 500;
@@ -319,7 +319,7 @@ body {
 /* ══ RESPONSIVE ══ */
 @media (max-width: 768px) {
   .navbar { padding: 0 12px; height: auto; min-height: 56px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }
-  .navbar-logo img { height: 28px; }
+  .navbar-logo img { height: 40px; }
   .navbar-nav { gap: 4px; }
   .nav-btn { font-size: 12px; padding: 5px 8px; }
   .navbar-session { gap: 6px; }
