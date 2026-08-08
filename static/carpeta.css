@@ -67,6 +67,7 @@
 .item-usuario {
   font-size: 12px; font-weight: 600; color: var(--red);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  display: inline-flex; align-items: center; min-width: 0;
 }
 .item-fecha { font-size: 11px; color: var(--text-3); white-space: nowrap; }
 .item-asunto {
@@ -117,7 +118,18 @@
 .detalle-asunto.sin-asunto { color: var(--text-3); font-style: italic; font-size: 15px; font-weight: 400; }
 
 .detalle-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.meta-user  { font-size: 13px; font-weight: 600; color: var(--red); }
+.meta-user  { font-size: 13px; font-weight: 600; color: var(--red); display: inline-flex; align-items: center; }
+
+/* Avatar del autor junto al @usuario */
+.autor-avatar {
+  width: 18px; height: 18px; border-radius: 50%; object-fit: cover;
+  margin-right: 5px; flex-shrink: 0; vertical-align: middle;
+}
+.meta-user .autor-avatar { width: 20px; height: 20px; }
+.autor-avatar-ph {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent-soft); color: var(--red);
+}
 .meta-fecha { font-size: 12px; color: var(--text-3); }
 .meta-vistas { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-3); }
 .meta-tipo  {

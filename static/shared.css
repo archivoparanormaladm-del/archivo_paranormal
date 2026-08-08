@@ -241,24 +241,24 @@ body {
 .modal-title  { color: var(--text); text-align: center; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
 .modal-subtitle { text-align: center; color: var(--text-3); font-size: 12px; margin-bottom: 22px; line-height: 1.5; }
 
-#upload-form { display: flex; flex-direction: column; }
-#upload-form label {
+.modal-box form { display: flex; flex-direction: column; }
+.modal-box form label {
   font-size: 11px; font-weight: 600; color: var(--text-2);
   margin-bottom: 6px; letter-spacing: .4px; text-transform: uppercase;
 }
-#upload-form input[type="file"],
-#upload-form select,
-#upload-form input[type="text"],
-#upload-form textarea {
+.modal-box form input,
+.modal-box form select,
+.modal-box form textarea {
+  width: 100%;
   background: var(--bg-2); border: 1px solid var(--border);
   color: var(--text); font-family: inherit; font-size: 14px;
   padding: 10px 12px; margin-bottom: 14px; outline: none;
   border-radius: 8px; transition: border-color .15s, box-shadow .15s;
 }
-#upload-form input:focus, #upload-form select:focus, #upload-form textarea:focus {
+.modal-box form input:focus, .modal-box form select:focus, .modal-box form textarea:focus {
   border-color: var(--red-2); box-shadow: 0 0 0 3px rgba(192,32,32,.12);
 }
-#upload-form textarea { resize: vertical; }
+.modal-box form textarea { resize: vertical; }
 
 .tipo-detectado { font-size: 12px; color: var(--text-3); margin: -8px 0 12px; min-height: 14px; }
 .word-count { font-size: 11px; color: var(--text-3); margin: -8px 0 14px; text-align: right; }

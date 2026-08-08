@@ -160,7 +160,7 @@ async function mostrarDetalle(a) {
     <div class="detalle-header">
       <p class="detalle-asunto ${!a.asunto ? 'sin-asunto' : ''}">${a.asunto || 'Sin asunto'}</p>
       <div class="detalle-meta">
-        <span class="meta-user">${a.subido_por ? '@' + a.subido_por : 'Usuario'}</span>
+        <span class="meta-user">${avatarChip(a)}${a.subido_por ? '@' + a.subido_por : 'Usuario'}</span>
         <span class="meta-fecha">${a.fecha}</span>
         <span class="meta-tipo">${a.tipo}</span>
         <span class="meta-vistas">
@@ -334,6 +334,12 @@ async function enviarComentario(archivoId) {
   }
 }
 
+/* ── Avatar del autor junto al usuario ──────────────────── */
+function avatarChip(a) {
+  if (a.avatar) return `<img class="autor-avatar" src="${a.avatar}" alt="" loading="lazy">`;
+  return `<span class="autor-avatar autor-avatar-ph"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></span>`;
+}
+
 /* ── Miniatura de previsualización ──────────────────────── */
 function miniatura(a) {
   if (a.tipo === 'imagen') return `<img src="${a.url}" alt="" loading="lazy">`;
@@ -358,7 +364,7 @@ function renderLista(archivos) {
       <div class="item-thumb">${miniatura(a)}</div>
       <div class="item-info">
         <div class="item-top">
-          <span class="item-usuario">${a.subido_por ? '@' + a.subido_por : 'Usuario'}</span>
+          <span class="item-usuario">${avatarChip(a)}${a.subido_por ? '@' + a.subido_por : 'Usuario'}</span>
           <span class="item-fecha">${a.fecha}</span>
         </div>
         <p class="item-asunto ${!a.asunto ? 'sin-asunto' : ''}">${a.asunto || 'Sin asunto'}</p>

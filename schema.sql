@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
                 -- 3 = Usuario Restringido (solo consumir contenido)
     puede_subir BOOLEAN NOT NULL DEFAULT TRUE,
     bloqueado   BOOLEAN NOT NULL DEFAULT FALSE,
+    avatar      VARCHAR(255),
     created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT usuarios_email_key       UNIQUE (email),
     CONSTRAINT usuarios_username_unique  UNIQUE (username)

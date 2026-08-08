@@ -29,6 +29,7 @@ BASE_DIR    = os.path.dirname(__file__)
 UPLOADS_DIR = os.getenv("UPLOADS_DIR", os.path.join(BASE_DIR, "uploads"))
 ADUANA      = os.path.join(UPLOADS_DIR, "aduana")
 APROBADOS   = os.path.join(UPLOADS_DIR, "aprobados")
+AVATARES    = os.path.join(UPLOADS_DIR, "avatares")
 
 # Categorías iniciales — solo se usan para sembrar la tabla `categorias`
 # la primera vez. A partir de ahí, la fuente de la verdad es la base de datos
@@ -41,6 +42,7 @@ EXT_VIDEO  = {"mp4", "mov", "avi", "mkv", "webm", "wmv"}
 EXT_AUDIO  = {"mp3", "wav", "ogg", "flac", "m4a", "aac"}
 
 os.makedirs(ADUANA, exist_ok=True)
+os.makedirs(AVATARES, exist_ok=True)
 
 # ── Base de datos ──────────────────────────────────────────
 def get_db():
@@ -324,6 +326,7 @@ def login():
     session["email"]       = user["email"]
     session["perfil"]      = user["perfil"]
     session["puede_subir"] = user["puede_subir"]
+    session["avatar"]      = user.get("avatar")
 
     return jsonify({
         "ok":          True,
@@ -353,6 +356,8 @@ def me():
         "puede_subir":  session["puede_subir"],
         "es_super":     session["perfil"] == 0,
         "permisos":     permisos_efectivos(),
+        "avatar":       (lambda a: f"/api/avatar/{a['avatar']}" if a and a.get("avatar") else None)(
+                            query("SELECT avatar FROM usuarios WHERE id=%s", (session["user_id"],), fetchone=True)),
     })
 
 @app.route("/api/auth/check_username")
@@ -412,13 +417,14 @@ def upload():
 @app.route("/api/archivos/<categoria>")
 def archivos_por_categoria(categoria):
     filas = query(
-        """SELECT a.*, u.username AS subido_por
+        """SELECT a.*, u.username AS subido_por, u.avatar AS autor_avatar
            FROM archivos a
            LEFT JOIN usuarios u ON u.id = a.usuario_id
            WHERE a.categoria=%s AND a.estado='aprobado'
            ORDER BY a.created_at DESC""",
         (categoria,),
     )
+    incognito = categoria == "Modo Incognito"
     resultado = []
     for f in filas:
         resultado.append({
@@ -430,7 +436,8 @@ def archivos_por_categoria(categoria):
             "url":         f"/api/archivo/{f['nombre_guardado']}",
             "fecha":       f["created_at"].strftime("%d/%m/%Y"),
             "visitas":     f["visitas_count"] or 0,
-            "subido_por":  "" if categoria == "Modo Incognito" else (f["subido_por"] or ""),
+            "subido_por":  "" if incognito else (f["subido_por"] or ""),
+            "avatar":      "" if (incognito or not f["autor_avatar"]) else f"/api/avatar/{f['autor_avatar']}",
         })
     return jsonify(resultado)
 
@@ -906,12 +913,100 @@ def mis_publicaciones():
         "nombre":    f["nombre_original"],
         "tipo":      f["tipo"],
         "asunto":    f["asunto"],
+        "descripcion": f["descripcion"],
         "categoria": f["categoria"],
         "estado":    f["estado"],
         "oculto":    f["oculto"],
         "fecha":     f["created_at"].strftime("%d/%m/%Y"),
         "url":       f"/api/archivo/{f['nombre_guardado']}" if f["estado"] == "aprobado" else f"/api/aduana/{f['nombre_guardado']}",
     } for f in filas])
+
+# ── Mi cuenta: perfil, avatar, editar/eliminar mis publicaciones ──
+@app.route("/api/usuario/perfil", methods=["POST"])
+@login_required
+def editar_mi_perfil():
+    data     = request.get_json() or {}
+    nombre   = (data.get("nombre") or "").strip()
+    username = (data.get("username") or "").strip().lower()
+    email    = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+    if not nombre or not username or not email:
+        return jsonify({"error": "Nombre, usuario y correo son obligatorios"}), 400
+    if not username_valido(username):
+        return jsonify({"error": "Nombre de usuario inválido (3-30, letras/números/._)"}), 400
+    if password and len(password) < 8:
+        return jsonify({"error": "La contraseña debe tener al menos 8 caracteres"}), 400
+    uid = session["user_id"]
+    if query("SELECT id FROM usuarios WHERE email=%s AND id<>%s", (email, uid), fetchone=True):
+        return jsonify({"error": "Ese correo ya está en uso"}), 409
+    if query("SELECT id FROM usuarios WHERE username=%s AND id<>%s", (username, uid), fetchone=True):
+        return jsonify({"error": "Ese nombre de usuario ya está en uso"}), 409
+    query("UPDATE usuarios SET nombre=%s, username=%s, email=%s WHERE id=%s",
+          (nombre, username, email, uid), commit=True)
+    if password:
+        query("UPDATE usuarios SET password=%s WHERE id=%s", (generate_password_hash(password), uid), commit=True)
+    session["nombre"] = nombre; session["username"] = username; session["email"] = email
+    return jsonify({"ok": True})
+
+@app.route("/api/usuario/avatar", methods=["POST"])
+@login_required
+def subir_avatar():
+    archivo = request.files.get("file")
+    if not archivo or archivo.filename == "":
+        return jsonify({"error": "No se recibió ninguna imagen"}), 400
+    ext = archivo.filename.rsplit(".", 1)[-1].lower() if "." in archivo.filename else ""
+    if ext not in EXT_IMAGEN:
+        return jsonify({"error": "El avatar debe ser una imagen (jpg, png, webp, gif...)"}), 400
+    nombre = f"{uuid.uuid4().hex}.{ext}"
+    os.makedirs(AVATARES, exist_ok=True)
+    archivo.save(os.path.join(AVATARES, nombre))
+    uid = session["user_id"]
+    anterior = query("SELECT avatar FROM usuarios WHERE id=%s", (uid,), fetchone=True)
+    query("UPDATE usuarios SET avatar=%s WHERE id=%s", (nombre, uid), commit=True)
+    session["avatar"] = nombre
+    if anterior and anterior["avatar"]:
+        try: os.remove(os.path.join(AVATARES, anterior["avatar"]))
+        except OSError: pass
+    return jsonify({"ok": True, "avatar": f"/api/avatar/{nombre}"})
+
+@app.route("/api/avatar/<nombre>")
+def servir_avatar(nombre):
+    return send_from_directory(AVATARES, secure_filename(nombre))
+
+@app.route("/api/usuario/publicaciones/<int:archivo_id>", methods=["POST"])
+@login_required
+def editar_mi_publicacion(archivo_id):
+    data = request.get_json() or {}
+    asunto      = (data.get("asunto") or "").strip()
+    descripcion = (data.get("descripcion") or "").strip()
+    if not asunto:
+        return jsonify({"error": "El asunto es obligatorio"}), 400
+    fila = query("SELECT usuario_id FROM archivos WHERE id=%s", (archivo_id,), fetchone=True)
+    if not fila:
+        return jsonify({"error": "Publicación no encontrada"}), 404
+    if fila["usuario_id"] != session["user_id"]:
+        return jsonify({"error": "No es tu publicación"}), 403
+    query("UPDATE archivos SET asunto=%s, descripcion=%s WHERE id=%s",
+          (asunto, descripcion, archivo_id), commit=True)
+    return jsonify({"ok": True})
+
+@app.route("/api/usuario/publicaciones/<int:archivo_id>", methods=["DELETE"])
+@login_required
+def eliminar_mi_publicacion(archivo_id):
+    fila = query("SELECT * FROM archivos WHERE id=%s", (archivo_id,), fetchone=True)
+    if not fila:
+        return jsonify({"error": "Publicación no encontrada"}), 404
+    if fila["usuario_id"] != session["user_id"]:
+        return jsonify({"error": "No es tu publicación"}), 403
+    # Borrar archivo físico según estado
+    if fila["estado"] == "aprobado":
+        ruta = os.path.join(APROBADOS, fila["categoria"], fila["nombre_guardado"])
+    else:
+        ruta = os.path.join(ADUANA, fila["nombre_guardado"])
+    if os.path.exists(ruta):
+        os.remove(ruta)
+    query("DELETE FROM archivos WHERE id=%s", (archivo_id,), commit=True)
+    return jsonify({"ok": True})
 
 # ── Admin — archivos publicados (gestión) ─────────────────
 @app.route("/api/admin/publicados")
