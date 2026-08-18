@@ -1,36 +1,124 @@
-let MIPERFIL = {};
+const PARAMS = new URLSearchParams(location.search);
+const U_PARAM = (PARAMS.get('u') || '').trim().toLowerCase();
+
+let MIPERFIL = {};        // sesión actual
+let MODO_PUBLICO = false; // viendo el perfil de otra persona
+let PERFIL_USER = null;   // username del perfil mostrado
 
 renderSessionBar().then(me => {
-  if (!me.autenticado) {
-    window.location.href = '/';
-    return;
+  MIPERFIL = me || {};
+  const esMio = !U_PARAM || (me.autenticado && me.username && U_PARAM === me.username.toLowerCase());
+  if (esMio) {
+    if (!me.autenticado) { window.location.href = '/'; return; }
+    MODO_PUBLICO = false;
+    PERFIL_USER = me.username;
+    setupMiPerfil(me);
+  } else {
+    MODO_PUBLICO = true;
+    PERFIL_USER = U_PARAM;
+    setupPerfilPublico(U_PARAM);
   }
-  MIPERFIL = me;
-  pintarPerfil(me);
-  cargarPublicaciones();
-  cargarGuardados();
 });
 
-/* ── Tarjeta de perfil ── */
-function pintarPerfil(me) {
-  document.getElementById('perfil-nombre').textContent = me.nombre || '';
-  document.getElementById('perfil-username').textContent = '@' + (me.username || '');
-  document.getElementById('perfil-email').textContent = me.email || '';
+/* ═════════ MI PERFIL ═════════ */
+function setupMiPerfil(me) {
+  pintarPerfil({ nombre: me.nombre, username: me.username, email: me.email, avatar: me.avatar });
+  setContadores({ seguidores: me.seguidores || 0, siguiendo: me.siguiendo || 0 });
+  cargarPublicaciones();
+  cargarGuardados();
+}
+
+/* ═════════ PERFIL PÚBLICO (otro usuario) ═════════ */
+async function setupPerfilPublico(username) {
+  // Ocultar controles propios
+  document.getElementById('avatar-input')?.remove();
+  document.querySelector('.avatar-cam')?.remove();
+  document.getElementById('avatar-wrap').style.cursor = 'default';
+  document.querySelector('.perfil-tab[data-tab="guardados"]')?.remove();
+  document.getElementById('tab-guardados')?.remove();
+  // Renombrar la pestaña (no es "mi" perfil)
+  const tabPub = document.querySelector('.perfil-tab[data-tab="publicaciones"]');
+  if (tabPub) tabPub.lastChild.textContent = ' Publicaciones';
+
+  let data;
+  try { data = await fetch(`/api/usuario/${encodeURIComponent(username)}/perfil`).then(r => r.json()); }
+  catch { data = { error: 'No se pudo cargar el perfil.' }; }
+
+  if (data.error) {
+    document.querySelector('.perfil-card').innerHTML = `<p class="vacio-txt">Usuario no encontrado.</p>`;
+    document.getElementById('lista-publicaciones').innerHTML = '';
+    document.getElementById('pub-section-title').textContent = '';
+    return;
+  }
+
+  pintarPerfil(data);
+  document.getElementById('perfil-email').remove(); // no exponer correo en perfil público
+  setContadores(data);
+  document.getElementById('pc-pubs').textContent = data.publicaciones.length;
+  document.getElementById('pub-section-title').textContent = `PUBLICACIONES DE @${data.username}`;
+
+  // Botón seguir / editar → seguir
+  const acc = document.getElementById('perfil-acciones');
+  acc.innerHTML = '';
+  if (data.autenticado && !data.es_mio) {
+    const btn = document.createElement('button');
+    btn.className = 'btn-seguir-perfil' + (data.sigo ? ' siguiendo' : '');
+    btn.textContent = data.sigo ? 'Siguiendo' : 'Seguir';
+    btn.addEventListener('click', async () => {
+      try {
+        const d = await fetch(`/api/usuario/${encodeURIComponent(data.username)}/seguir`, { method: 'POST' }).then(r => r.json());
+        if (d.ok) {
+          btn.classList.toggle('siguiendo', d.siguiendo);
+          btn.textContent = d.siguiendo ? 'Siguiendo' : 'Seguir';
+          const seg = document.getElementById('pc-seg');
+          seg.textContent = Math.max(0, (parseInt(seg.textContent) || 0) + (d.siguiendo ? 1 : -1));
+        } else showToast(d.error || 'No se pudo seguir.', 'error');
+      } catch {}
+    });
+    acc.appendChild(btn);
+  } else if (!data.autenticado) {
+    const a = document.createElement('a');
+    a.className = 'btn-seguir-perfil'; a.href = '/login.html'; a.textContent = 'Inicia sesión para seguir';
+    acc.appendChild(a);
+  }
+
+  // Publicaciones públicas
+  const wrap = document.getElementById('lista-publicaciones');
+  if (!data.publicaciones.length) {
+    wrap.innerHTML = '<p class="vacio-txt">Este usuario aún no tiene publicaciones.</p>';
+    return;
+  }
+  wrap.innerHTML = '';
+  data.publicaciones.forEach(a => wrap.appendChild(pubCard(a, false)));
+}
+
+/* ── Tarjeta de perfil (cabecera) ── */
+function pintarPerfil(u) {
+  document.getElementById('perfil-nombre').textContent = u.nombre || '';
+  document.getElementById('perfil-username').textContent = '@' + (u.username || '');
+  const emailEl = document.getElementById('perfil-email');
+  if (emailEl) emailEl.textContent = u.email || '';
   const img = document.getElementById('avatar-img');
   const ph = document.getElementById('avatar-ph');
-  if (me.avatar) {
-    img.src = me.avatar + '?t=' + Date.now();
+  if (u.avatar) {
+    img.src = u.avatar + (u.avatar.includes('?') ? '' : '?t=' + Date.now());
     img.classList.remove('hidden'); ph.classList.add('hidden');
   } else {
     img.classList.add('hidden'); ph.classList.remove('hidden');
   }
 }
 
-/* ── Subir avatar ── */
+function setContadores({ seguidores = 0, siguiendo = 0 }) {
+  document.getElementById('pc-seg').textContent = seguidores;
+  document.getElementById('pc-sig').textContent = siguiendo;
+}
+
+/* ── Subir avatar (solo mi perfil) ── */
 document.getElementById('avatar-wrap').addEventListener('click', () => {
-  document.getElementById('avatar-input').click();
+  if (MODO_PUBLICO) return;
+  document.getElementById('avatar-input')?.click();
 });
-document.getElementById('avatar-input').addEventListener('change', async e => {
+document.getElementById('avatar-input')?.addEventListener('change', async e => {
   const file = e.target.files[0];
   if (!file) return;
   if (file.size > 50 * 1024 * 1024) { showToast('La imagen supera los 50MB.', 'error'); return; }
@@ -41,13 +129,14 @@ document.getElementById('avatar-input').addEventListener('change', async e => {
     if (data.ok) {
       MIPERFIL.avatar = data.avatar;
       pintarPerfil(MIPERFIL);
+      if (typeof renderSessionBar === 'function') renderSessionBar();
       showToast('Foto de perfil actualizada.');
     } else { showToast('Error: ' + (data.error || 'no se pudo subir'), 'error'); }
   } catch { showToast('No se pudo conectar con el servidor.', 'error'); }
 });
 
 /* ── Editar perfil (modal) ── */
-document.getElementById('btn-editar-perfil').addEventListener('click', () => {
+document.getElementById('btn-editar-perfil')?.addEventListener('click', () => {
   const me = MIPERFIL;
   const ov = document.createElement('div');
   ov.className = 'modal-overlay';
@@ -108,51 +197,48 @@ document.querySelectorAll('.perfil-tab').forEach(tab => {
     document.querySelectorAll('.perfil-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.perfil-content').forEach(c => c.classList.add('hidden'));
     tab.classList.add('active');
-    document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
+    document.getElementById(`tab-${tab.dataset.tab}`)?.classList.remove('hidden');
   });
 });
 
-function thumbHtml(a) {
-  if (a.tipo === 'imagen') return `<img src="${a.url}" loading="lazy">`;
-  if (a.tipo === 'video')  return `<video src="${a.url}#t=0.5" preload="metadata" muted></video>`;
-  if (a.tipo === 'audio')  return `<div class="audio-ph"></div>`;
-  return `<div class="otro-ph">📄</div>`;
+/* ── Media de una publicación en el perfil ── */
+function mediaPerfil(a) {
+  if (a.estado && a.estado !== 'aprobado') {
+    const icon = a.tipo === 'video' ? '🎬' : a.tipo === 'audio' ? '🎵' : a.tipo === 'imagen' ? '🖼️' : '📄';
+    const txt = a.estado === 'pendiente' ? 'En revisión' : 'Rechazado';
+    return `<div class="pp-media-ph"><span class="pp-ph-icon">${icon}</span><span class="pp-ph-txt">${txt}</span></div>`;
+  }
+  return mediaHtmlPost(a);
 }
 
 function estadoBadge(estado) {
-  const map = { aprobado: 'aprobado', pendiente: 'pendiente', rechazado: 'rechazado' };
   const label = { aprobado: 'Publicado', pendiente: 'Pendiente', rechazado: 'Rechazado' };
-  return `<span class="pub-estado estado-${map[estado]}">${label[estado] || estado}</span>`;
+  return `<span class="pub-estado estado-${estado}">${label[estado] || estado}</span>`;
 }
 
-async function cargarPublicaciones() {
-  const wrap = document.getElementById('lista-publicaciones');
-  const data = await fetch('/api/usuario/publicaciones').then(r => r.json());
-  if (!data.length) {
-    wrap.innerHTML = '<p class="vacio-txt">No has subido publicaciones todavía.</p>';
-    return;
-  }
-  wrap.innerHTML = '';
-  data.forEach(a => {
-    const card = document.createElement('div');
-    card.className = 'pub-card';
-    card.innerHTML = `
-      <div class="pub-thumb">
-        ${thumbHtml(a)}
-        ${estadoBadge(a.estado)}
-      </div>
-      <div class="pub-info">
-        <p class="pub-asunto ${!a.asunto ? 'sin-asunto' : ''}">${a.asunto || 'Sin asunto'}</p>
-        <div class="pub-meta">
-          <span class="pub-cat">${a.categoria}</span>
-          <span class="pub-fecha">${a.fecha}</span>
-        </div>
-        <div class="pub-acciones">
-          <button class="pub-btn pub-btn-editar">Editar</button>
-          <button class="pub-btn pub-btn-eliminar">Eliminar</button>
-        </div>
-      </div>
-    `;
+/* ── Card estilo post (mis publicaciones y perfil público) ── */
+function pubCard(a, editable) {
+  const card = document.createElement('article');
+  card.className = 'feed-card pp-card';
+  card.dataset.id = a.id;
+  const link = `/carpeta.html?cat=${encodeURIComponent(a.categoria)}&archivo=${a.id}`;
+  card.innerHTML = `
+    <div class="feed-media">${mediaPerfil(a)}${editable && a.estado ? estadoBadge(a.estado) : ''}</div>
+    <p class="feed-asunto">${(a.asunto || 'Sin asunto').replace(/</g, '&lt;')}</p>
+    ${a.descripcion ? `<p class="feed-desc">${(a.descripcion || '').replace(/</g, '&lt;')}</p>` : ''}
+    <div class="pp-meta-row">
+      <a class="feed-cat" href="/carpeta.html?cat=${encodeURIComponent(a.categoria)}">${a.categoria}</a>
+      <span class="pp-fecha">${a.fecha}</span>
+      ${a.visitas != null ? `<span class="pp-vistas">👁 ${a.visitas}</span>` : ''}
+      <a class="pp-abrir" href="${link}">Abrir →</a>
+    </div>
+    ${editable ? `<div class="pub-acciones">
+      <button class="pub-btn pub-btn-editar">Editar</button>
+      <button class="pub-btn pub-btn-eliminar">Eliminar</button>
+    </div>` : ''}
+  `;
+  if (typeof activarReproductor === 'function') activarReproductor(card);
+  if (editable) {
     card.querySelector('.pub-btn-editar').addEventListener('click', () => editarPublicacion(a));
     card.querySelector('.pub-btn-eliminar').addEventListener('click', async () => {
       if (!(await confirmar('¿Eliminar esta publicación permanentemente?', 'Eliminar', true))) return;
@@ -161,8 +247,20 @@ async function cargarPublicaciones() {
       if (d.ok) { showToast('Publicación eliminada.'); cargarPublicaciones(); }
       else showToast('Error: ' + (d.error || 'no se pudo eliminar'), 'error');
     });
-    wrap.appendChild(card);
-  });
+  }
+  return card;
+}
+
+async function cargarPublicaciones() {
+  const wrap = document.getElementById('lista-publicaciones');
+  const data = await fetch('/api/usuario/publicaciones').then(r => r.json());
+  document.getElementById('pc-pubs').textContent = data.length;
+  if (!data.length) {
+    wrap.innerHTML = '<p class="vacio-txt">No has subido publicaciones todavía.</p>';
+    return;
+  }
+  wrap.innerHTML = '';
+  data.forEach(a => wrap.appendChild(pubCard(a, true)));
 }
 
 /* ── Editar una publicación propia (modal) ── */
@@ -203,8 +301,17 @@ function editarPublicacion(a) {
   });
 }
 
+/* ── Guardados (solo mi perfil) ── */
+function thumbHtml(a) {
+  if (a.tipo === 'imagen') return `<img src="${a.url}" loading="lazy">`;
+  if (a.tipo === 'video')  return `<video src="${a.url}#t=0.5" preload="metadata" muted></video>`;
+  if (a.tipo === 'audio')  return `<div class="audio-ph"></div>`;
+  return `<div class="otro-ph">📄</div>`;
+}
+
 async function cargarGuardados() {
   const wrap = document.getElementById('lista-guardados');
+  if (!wrap) return;
   const data = await fetch('/api/usuario/guardados').then(r => r.json());
   if (!data.length) {
     wrap.innerHTML = '<p class="vacio-txt">No has guardado publicaciones todavía.</p>';

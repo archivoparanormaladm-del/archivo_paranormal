@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="carpeta.css">
+<link rel="stylesheet" href="feed.css">
 <link rel="stylesheet" href="perfil.css">
 </head>
 <body>
@@ -37,11 +39,18 @@
       <p class="perfil-nombre" id="perfil-nombre">—</p>
       <p class="perfil-username" id="perfil-username">@—</p>
       <p class="perfil-email" id="perfil-email"></p>
+      <div class="perfil-contadores" id="perfil-contadores">
+        <span class="pc-item"><strong id="pc-pubs">0</strong> publicaciones</span>
+        <span class="pc-item"><strong id="pc-seg">0</strong> seguidores</span>
+        <span class="pc-item"><strong id="pc-sig">0</strong> siguiendo</span>
+      </div>
     </div>
-    <button class="btn-editar-perfil" id="btn-editar-perfil">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-      Editar perfil
-    </button>
+    <div class="perfil-acciones" id="perfil-acciones">
+      <button class="btn-editar-perfil" id="btn-editar-perfil">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        Editar perfil
+      </button>
+    </div>
   </div>
 
   <!-- Tabs -->
@@ -58,8 +67,8 @@
 
   <!-- Publicaciones -->
   <div id="tab-publicaciones" class="perfil-content">
-    <p class="perfil-section-title">MIS PUBLICACIONES</p>
-    <div id="lista-publicaciones" class="perfil-grid">
+    <p class="perfil-section-title" id="pub-section-title">MIS PUBLICACIONES</p>
+    <div id="lista-publicaciones" class="pp-lista">
       <p class="cargando-txt">Cargando...</p>
     </div>
   </div>

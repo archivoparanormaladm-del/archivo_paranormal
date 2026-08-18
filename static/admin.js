@@ -18,6 +18,32 @@ function configurarSegunPermisos() {
   // La pestaña "Permisos" solo la ve el Super Administrador.
   const tabPerm = document.getElementById('tab-btn-permisos');
   if (tabPerm) tabPerm.classList.toggle('hidden', ME.perfil !== 0);
+
+  // El Super Admin (perfil 0) siempre tiene todos los permisos: no se oculta nada.
+  if (ME.perfil === 0) return;
+
+  const p = PERM();
+  const tabPorPermiso = {
+    pendientes: p.moderar_archivos,
+    usuarios:   p.gestionar_usuarios || p.editar_usuarios,
+    soporte:    p.responder_soporte,
+    reportes:   p.gestionar_reportes,
+  };
+  Object.entries(tabPorPermiso).forEach(([tab, permitido]) => {
+    const btn = document.querySelector(`.tab[data-tab="${tab}"]`);
+    if (btn) btn.classList.toggle('hidden', !permitido);
+  });
+
+  // Formulario de crear categoría: solo con permiso.
+  const catForm = document.getElementById('cat-form');
+  if (catForm) catForm.classList.toggle('hidden', !p.gestionar_categorias);
+
+  // Si la pestaña activa quedó oculta, activar la primera visible.
+  const activa = document.querySelector('.tab.active');
+  if (activa && activa.classList.contains('hidden')) {
+    const primera = document.querySelector('.tab:not(.hidden)');
+    if (primera) primera.click();
+  }
 }
 
 // ── Tabs ──────────────────────────────────────────────────
@@ -155,12 +181,12 @@ async function cargarUsuarios() {
         <div class="acciones-usuario">
 
           <!-- Cambiar perfil (asignar roles de admin: solo Super Admin) -->
-          <select class="select-perfil" data-uid="${u.id}" data-accion="perfil">
+          ${PERM().gestionar_usuarios ? `<select class="select-perfil" data-uid="${u.id}" data-accion="perfil">
             ${ME.perfil === 0 ? `<option value="0" ${u.perfil===0?'selected':''}>Super Admin</option>` : ''}
             <option value="1" ${u.perfil===1?'selected':''} ${ME.perfil!==0?'disabled':''}>Admin</option>
             <option value="2" ${u.perfil===2?'selected':''}>Estándar</option>
             <option value="3" ${u.perfil===3?'selected':''}>Restringido</option>
-          </select>
+          </select>` : ''}
 
           <!-- Editar datos (permiso delegable) -->
           ${PERM().editar_usuarios
@@ -168,6 +194,7 @@ async function cargarUsuarios() {
                        data-nombre="${u.nombre}" data-username="${u.username || ''}" data-email="${u.email}">Editar datos</button>`
             : ''}
 
+          ${PERM().gestionar_usuarios ? `
           <!-- Bloquear / desbloquear -->
           ${u.bloqueado
             ? `<button class="btn-mini btn-mini-verde" data-uid="${u.id}" data-accion="desbloquear">Desbloquear</button>`
@@ -187,6 +214,7 @@ async function cargarUsuarios() {
 
           <!-- Eliminar -->
           <button class="btn-mini btn-mini-rojo" data-uid="${u.id}" data-accion="eliminar">Eliminar</button>
+          ` : ''}
         </div>
       </td>
     `;
@@ -325,10 +353,10 @@ async function cargarPublicados() {
       <p class="p-nombre">${a.nombre}</p>
       <p class="p-meta">Usuario: <strong>${a.usuario}</strong> · ${a.fecha}</p>
       <div class="acciones-card" style="flex-wrap:wrap;gap:6px">
-        <button class="btn-accion ${a.oculto ? 'btn-verde' : 'btn-rojo'}" 
+        ${PERM().eliminar_publicaciones ? `<button class="btn-accion ${a.oculto ? 'btn-verde' : 'btn-rojo'}"
                 data-id="${a.id}" data-accion="ocultar" style="flex:unset;padding:8px 14px">
           ${a.oculto ? '👁 Mostrar' : '🚫 Ocultar'}
-        </button>
+        </button>` : ''}
         <button class="btn-accion" data-id="${a.id}" data-accion="editar-asunto"
                 style="flex:unset;padding:8px 14px;background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.25)">
           ✏ Editar asunto
@@ -345,10 +373,10 @@ async function cargarPublicados() {
                 style="flex:unset;padding:8px 14px;background:rgba(255,255,255,.05);color:#aaa;border:1px solid rgba(255,255,255,.1)">
           💬 Comentarios
         </button>
-        <button class="btn-accion btn-rojo" data-id="${a.id}" data-accion="eliminar-pub"
+        ${PERM().eliminar_publicaciones ? `<button class="btn-accion btn-rojo" data-id="${a.id}" data-accion="eliminar-pub"
                 style="flex:unset;padding:8px 14px">
           🗑 Eliminar
-        </button>
+        </button>` : ''}
       </div>
     `;
     grid.appendChild(card);
@@ -534,10 +562,12 @@ async function cargarCategorias() {
         ${PERM().renombrar_carpetas
           ? `<button class="btn-mini btn-mini-azul" data-id="${c.id}" data-nombre="${c.nombre}" data-accion="renombrar">Renombrar</button>`
           : ''}
-        <button class="btn-mini btn-mini-rojo" data-id="${c.id}" data-nombre="${c.nombre}" data-accion="eliminar"
+        ${PERM().gestionar_categorias
+          ? `<button class="btn-mini btn-mini-rojo" data-id="${c.id}" data-nombre="${c.nombre}" data-accion="eliminar"
                 ${c.archivos > 0 ? 'disabled title="Tiene archivos; no se puede eliminar"' : ''}>
           Eliminar
-        </button>
+        </button>`
+          : ''}
       </div>
     `;
     wrap.appendChild(row);
@@ -694,10 +724,16 @@ async function cargarSoporte() {
 
 // ══ PERMISOS (solo Super Admin) ══
 const PERMISOS_LABEL = {
-  renombrar_carpetas: 'Cambiar el nombre de las carpetas',
-  mover_archivos:     'Mover archivos de una carpeta a otra',
-  editar_usuarios:    'Modificar los datos de los usuarios',
-  editar_peso:        'Editar el peso máximo de subida',
+  renombrar_carpetas:     'Cambiar el nombre de las carpetas',
+  mover_archivos:         'Mover archivos de una carpeta a otra',
+  editar_usuarios:        'Modificar los datos de los usuarios',
+  editar_peso:            'Editar el peso máximo de subida',
+  moderar_archivos:       'Aprobar o rechazar archivos pendientes',
+  gestionar_usuarios:     'Bloquear usuarios, cambiar roles y contraseñas',
+  gestionar_categorias:   'Crear y eliminar categorías',
+  eliminar_publicaciones: 'Ocultar y eliminar publicaciones ya aprobadas',
+  responder_soporte:      'Responder tickets de soporte',
+  gestionar_reportes:     'Resolver reportes de usuarios',
 };
 
 async function cargarPermisos() {

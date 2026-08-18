@@ -173,7 +173,14 @@ INSERT INTO configuracion (clave, valor) VALUES
     ('admin_perm_renombrar_carpetas', 'false'),
     ('admin_perm_mover_archivos', 'false'),
     ('admin_perm_editar_usuarios', 'false'),
-    ('admin_perm_editar_peso', 'false')
+    ('admin_perm_editar_peso', 'false'),
+    -- Permisos delegables nuevos (activos por defecto; el Super Admin los revoca)
+    ('admin_perm_moderar_archivos', 'true'),
+    ('admin_perm_gestionar_usuarios', 'true'),
+    ('admin_perm_gestionar_categorias', 'true'),
+    ('admin_perm_responder_soporte', 'true'),
+    ('admin_perm_gestionar_reportes', 'true'),
+    ('admin_perm_eliminar_publicaciones', 'true')
 ON CONFLICT (clave) DO NOTHING;
 
 -- ── Índices útiles ─────────────────────────────────────────

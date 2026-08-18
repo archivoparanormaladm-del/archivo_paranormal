@@ -48,14 +48,15 @@ function renderPost(a) {
   const puedeSeguir = feedMe.autenticado && !a.es_mio && a.subido_por;
   const descLarga = (a.descripcion || '').length > 160;
 
+  const perfilHref = a.subido_por ? `/perfil.html?u=${encodeURIComponent(a.subido_por)}` : null;
   const card = document.createElement('article');
   card.className = 'feed-card';
   card.dataset.id = a.id;
   card.innerHTML = `
     <div class="feed-head">
-      ${avatarChip(a)}
+      ${perfilHref ? `<a href="${perfilHref}" class="feed-perfil-link">${avatarChip(a)}</a>` : avatarChip(a)}
       <div class="feed-head-info">
-        <span class="feed-user">${usuario}</span>
+        ${perfilHref ? `<a class="feed-user feed-perfil-link" href="${perfilHref}">${usuario}</a>` : `<span class="feed-user">${usuario}</span>`}
         <span class="feed-fecha">${a.fecha}</span>
       </div>
       ${puedeSeguir ? `<button class="feed-seguir ${a.siguiendo ? 'siguiendo' : ''}">${a.siguiendo ? 'Siguiendo' : 'Seguir'}</button>` : ''}
@@ -109,12 +110,8 @@ function renderPost(a) {
     } catch {}
   });
 
-  // Compartir
-  card.querySelector('.feed-compartir').addEventListener('click', () => {
-    const url = window.location.origin + link;
-    if (navigator.share) navigator.share({ title: a.asunto || 'Archivo Paranormal', url }).catch(() => {});
-    else { navigator.clipboard.writeText(url); showToast('Enlace copiado al portapapeles.'); }
-  });
+  // Compartir (con marca de agua para imágenes)
+  card.querySelector('.feed-compartir').addEventListener('click', () => compartirPost(a, link));
 
   // Seguir
   const segBtn = card.querySelector('.feed-seguir');
@@ -135,6 +132,94 @@ function renderPost(a) {
 
   // Comentarios inline (Instagram)
   card.querySelector('.feed-coment-btn').addEventListener('click', () => toggleComentarios(card, a));
+}
+
+/* ── Compartir con marca de agua estilo historia (Instagram/Tumblr/Reddit) ── */
+async function compartirPost(a, link) {
+  const url = window.location.origin + link;
+  // Para imágenes: generar una versión con marca de agua y compartirla/descargarla.
+  if (a.tipo === 'imagen') {
+    showToast('Preparando imagen con marca de agua...');
+    try {
+      const blob = await generarImagenMarca(a);
+      const file = new File([blob], `darkfiles-${a.id}.png`, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: a.asunto || 'DARK FILES', text: `${a.asunto || ''}\n${url}` });
+        return;
+      }
+      // Fallback: descargar la imagen con la marca lista para compartir.
+      const dl = URL.createObjectURL(blob);
+      const link_ = document.createElement('a');
+      link_.href = dl; link_.download = `darkfiles-${a.id}.png`;
+      document.body.appendChild(link_); link_.click(); link_.remove();
+      setTimeout(() => URL.revokeObjectURL(dl), 4000);
+      showToast('Imagen con marca de agua descargada para compartir.');
+      return;
+    } catch (e) {
+      // Si algo falla, compartir el enlace normal.
+    }
+  }
+  // Video/audio/otros o error: compartir el enlace.
+  if (navigator.share) navigator.share({ title: a.asunto || 'DARK FILES', url }).catch(() => {});
+  else { navigator.clipboard.writeText(url); showToast('Enlace copiado al portapapeles.'); }
+}
+
+function generarImagenMarca(a) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const W = img.naturalWidth || 1080;
+      const H = img.naturalHeight || 1080;
+      const barH = Math.max(46, Math.round(H * 0.075));
+      const pad = Math.round(barH * 0.42);
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H + barH;
+      const ctx = canvas.getContext('2d');
+      // Fondo + imagen
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, W, H);
+
+      // Marca de agua en esquina superior (sobre la imagen)
+      const wmFs = Math.max(16, Math.round(W * 0.028));
+      ctx.font = `800 ${wmFs}px system-ui, -apple-system, sans-serif`;
+      ctx.textBaseline = 'top';
+      ctx.textAlign = 'left';
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 8;
+      ctx.fillStyle = '#fff';
+      ctx.fillText('DARK', pad, pad);
+      const dW = ctx.measureText('DARK ').width;
+      ctx.fillStyle = '#e11d2a';
+      ctx.fillText(' FILES', pad + dW - ctx.measureText(' ').width, pad);
+      ctx.restore();
+
+      // Barra inferior con marca + autor
+      ctx.fillStyle = '#111214';
+      ctx.fillRect(0, H, W, barH);
+      const fs = Math.round(barH * 0.4);
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.font = `800 ${fs}px system-ui, -apple-system, sans-serif`;
+      ctx.fillStyle = '#fff';
+      ctx.fillText('DARK', pad, H + barH / 2);
+      const bW = ctx.measureText('DARK ').width;
+      ctx.fillStyle = '#e11d2a';
+      ctx.fillText(' FILES', pad + bW - ctx.measureText(' ').width, H + barH / 2);
+      // Autor / sitio a la derecha
+      ctx.textAlign = 'right';
+      ctx.font = `500 ${Math.round(fs * 0.78)}px system-ui, -apple-system, sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,.7)';
+      const handle = a.subido_por ? '@' + a.subido_por : window.location.host;
+      ctx.fillText(handle, W - pad, H + barH / 2);
+
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob null')), 'image/png');
+    };
+    img.onerror = reject;
+    img.src = a.url;
+  });
 }
 
 /* ── Comentarios inline ── */

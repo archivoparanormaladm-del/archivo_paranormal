@@ -130,5 +130,40 @@
   .perfil-tab  { white-space: nowrap; }
 }
 
+/* ── Contadores de perfil ── */
+.perfil-contadores { display: flex; gap: 18px; margin-top: 12px; flex-wrap: wrap; }
+.pc-item { font-size: 13px; color: var(--text-3); background: none; border: none; font-family: inherit; }
+.pc-item strong { color: var(--text); font-weight: 700; font-size: 15px; margin-right: 3px; }
+
+/* ── Botón seguir en el perfil público ── */
+.perfil-acciones { display: flex; align-items: center; }
+.btn-seguir-perfil {
+  font-family: inherit; font-size: 14px; font-weight: 700; text-decoration: none;
+  padding: 10px 22px; border-radius: 22px; cursor: pointer; text-align: center;
+  background: var(--red-2); color: #fff; border: 1px solid var(--red-2); transition: all .15s;
+}
+.btn-seguir-perfil:hover { background: var(--red-dark); }
+.btn-seguir-perfil.siguiendo { background: transparent; color: var(--text-2); border-color: var(--border); }
+.btn-seguir-perfil.siguiendo:hover { border-color: var(--red-2); color: var(--red); }
+
+/* ── Publicaciones estilo post ── */
+.pp-lista { display: flex; flex-direction: column; gap: 22px; max-width: 620px; margin: 0 auto; }
+.pp-card .feed-media { min-height: 160px; }
+.pp-media-ph {
+  width: 100%; min-height: 200px; display: flex; flex-direction: column; gap: 8px;
+  align-items: center; justify-content: center; color: var(--text-3);
+}
+.pp-media-ph .pp-ph-icon { font-size: 2.6rem; opacity: .5; }
+.pp-media-ph .pp-ph-txt { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+.pp-meta-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 6px;
+  border-top: 1px solid var(--border); padding-top: 10px; }
+.pp-fecha, .pp-vistas { font-size: 12px; color: var(--text-3); }
+.pp-abrir { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--red); text-decoration: none; }
+.pp-card .pub-acciones { margin-top: 12px; padding-top: 0; }
+
+@media (max-width: 480px) {
+  .pp-lista { gap: 16px; }
+}
+
 /* ══ MODO CLARO ══ */
 :root[data-modo="claro"] .pub-thumb { background: #e4e4e7; }

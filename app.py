@@ -133,10 +133,16 @@ asegurar_categorias()
 # Permisos que el Super Admin (perfil 0) siempre tiene y que puede
 # delegar al Admin (perfil 1). La clave interna mapea a la fila de `configuracion`.
 PERMISOS_DELEGABLES = {
-    "renombrar_carpetas": "admin_perm_renombrar_carpetas",
-    "mover_archivos":     "admin_perm_mover_archivos",
-    "editar_usuarios":    "admin_perm_editar_usuarios",
-    "editar_peso":        "admin_perm_editar_peso",
+    "renombrar_carpetas":   "admin_perm_renombrar_carpetas",
+    "mover_archivos":       "admin_perm_mover_archivos",
+    "editar_usuarios":      "admin_perm_editar_usuarios",
+    "editar_peso":          "admin_perm_editar_peso",
+    "moderar_archivos":     "admin_perm_moderar_archivos",
+    "gestionar_usuarios":   "admin_perm_gestionar_usuarios",
+    "gestionar_categorias": "admin_perm_gestionar_categorias",
+    "responder_soporte":    "admin_perm_responder_soporte",
+    "gestionar_reportes":   "admin_perm_gestionar_reportes",
+    "eliminar_publicaciones": "admin_perm_eliminar_publicaciones",
 }
 
 CONFIG_DEFAULTS = {
@@ -145,6 +151,14 @@ CONFIG_DEFAULTS = {
     "admin_perm_mover_archivos": "false",
     "admin_perm_editar_usuarios": "false",
     "admin_perm_editar_peso": "false",
+    # Permisos delegables nuevos. Por defecto activos para no romper el flujo
+    # actual del Admin; el Super Admin puede revocarlos desde el panel.
+    "admin_perm_moderar_archivos": "true",
+    "admin_perm_gestionar_usuarios": "true",
+    "admin_perm_gestionar_categorias": "true",
+    "admin_perm_responder_soporte": "true",
+    "admin_perm_gestionar_reportes": "true",
+    "admin_perm_eliminar_publicaciones": "true",
 }
 
 def get_config(clave, default=None):
@@ -358,6 +372,8 @@ def me():
         "permisos":     permisos_efectivos(),
         "avatar":       (lambda a: f"/api/avatar/{a['avatar']}" if a and a.get("avatar") else None)(
                             query("SELECT avatar FROM usuarios WHERE id=%s", (session["user_id"],), fetchone=True)),
+        "seguidores":   query("SELECT COUNT(*) AS n FROM seguidores WHERE seguido_id=%s", (session["user_id"],), fetchone=True)["n"],
+        "siguiendo":    query("SELECT COUNT(*) AS n FROM seguidores WHERE seguidor_id=%s", (session["user_id"],), fetchone=True)["n"],
     })
 
 @app.route("/api/auth/check_username")
@@ -518,7 +534,7 @@ def admin_listar_categorias():
 
 @app.route("/api/admin/categorias", methods=["POST"])
 @login_required
-@admin_required
+@permiso_required("gestionar_categorias")
 def crear_categoria():
     nombre = (request.get_json().get("nombre") or "").strip()
     if not nombre:
@@ -537,7 +553,7 @@ def crear_categoria():
 
 @app.route("/api/admin/categorias/<int:cid>", methods=["DELETE"])
 @login_required
-@admin_required
+@permiso_required("gestionar_categorias")
 def eliminar_categoria(cid):
     cat = query("SELECT nombre FROM categorias WHERE id=%s", (cid,), fetchone=True)
     if not cat:
@@ -585,7 +601,7 @@ def servir_aduana(nombre_guardado):
 # ── Admin — aprobar ────────────────────────────────────────
 @app.route("/api/admin/aprobar/<int:archivo_id>", methods=["POST"])
 @login_required
-@admin_required
+@permiso_required("moderar_archivos")
 def aprobar(archivo_id):
     fila = query("SELECT * FROM archivos WHERE id=%s AND estado='pendiente'", (archivo_id,), fetchone=True)
     if not fila:
@@ -600,7 +616,7 @@ def aprobar(archivo_id):
 # ── Admin — rechazar ───────────────────────────────────────
 @app.route("/api/admin/rechazar/<int:archivo_id>", methods=["POST"])
 @login_required
-@admin_required
+@permiso_required("moderar_archivos")
 def rechazar(archivo_id):
     fila = query("SELECT * FROM archivos WHERE id=%s AND estado='pendiente'", (archivo_id,), fetchone=True)
     if not fila:
@@ -632,21 +648,21 @@ def listar_usuarios():
 
 @app.route("/api/admin/usuarios/<int:uid>/bloquear", methods=["POST"])
 @login_required
-@admin_required
+@permiso_required("gestionar_usuarios")
 def bloquear(uid):
     query("UPDATE usuarios SET bloqueado=TRUE WHERE id=%s", (uid,), commit=True)
     return jsonify({"ok": True})
 
 @app.route("/api/admin/usuarios/<int:uid>/desbloquear", methods=["POST"])
 @login_required
-@admin_required
+@permiso_required("gestionar_usuarios")
 def desbloquear(uid):
     query("UPDATE usuarios SET bloqueado=FALSE WHERE id=%s", (uid,), commit=True)
     return jsonify({"ok": True})
 
 @app.route("/api/admin/usuarios/<int:uid>/perfil", methods=["POST"])
 @login_required
-@admin_required
+@permiso_required("gestionar_usuarios")
 def cambiar_perfil(uid):
     perfil = request.get_json().get("perfil")
     if perfil not in (0, 1, 2, 3):
@@ -663,7 +679,7 @@ def cambiar_perfil(uid):
 
 @app.route("/api/admin/usuarios/<int:uid>/subida", methods=["POST"])
 @login_required
-@admin_required
+@permiso_required("gestionar_usuarios")
 def toggle_subida(uid):
     habilitado = request.get_json().get("habilitado", True)
     query("UPDATE usuarios SET puede_subir=%s WHERE id=%s", (habilitado, uid), commit=True)
@@ -671,7 +687,7 @@ def toggle_subida(uid):
 
 @app.route("/api/admin/usuarios/<int:uid>/password", methods=["POST"])
 @login_required
-@admin_required
+@permiso_required("gestionar_usuarios")
 def cambiar_password(uid):
     nueva = request.get_json().get("password") or ""
     if len(nueva) < 8:
@@ -681,7 +697,7 @@ def cambiar_password(uid):
 
 @app.route("/api/admin/usuarios/<int:uid>", methods=["DELETE"])
 @login_required
-@admin_required
+@permiso_required("gestionar_usuarios")
 def eliminar_usuario(uid):
     if uid == session["user_id"]:
         return jsonify({"error": "No puedes eliminarte a ti mismo"}), 400
@@ -809,7 +825,7 @@ def get_reportes():
 
 @app.route("/api/admin/reportes/<int:rid>/resolver", methods=["POST"])
 @login_required
-@admin_required
+@permiso_required("gestionar_reportes")
 def resolver_reporte(rid):
     query("UPDATE reportes SET resuelto=TRUE WHERE id=%s", (rid,), commit=True)
     return jsonify({"ok": True})
@@ -1056,6 +1072,49 @@ def eliminar_mi_publicacion(archivo_id):
     query("DELETE FROM archivos WHERE id=%s", (archivo_id,), commit=True)
     return jsonify({"ok": True})
 
+# ── Perfil público de un usuario ──────────────────────────
+@app.route("/api/usuario/<username>/perfil")
+def perfil_publico(username):
+    u = query("SELECT id, nombre, username, avatar FROM usuarios WHERE username=%s",
+              (username.strip().lower(),), fetchone=True)
+    if not u:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+    uid_visor = session.get("user_id")
+    seguidores = query("SELECT COUNT(*) AS n FROM seguidores WHERE seguido_id=%s", (u["id"],), fetchone=True)["n"]
+    siguiendo  = query("SELECT COUNT(*) AS n FROM seguidores WHERE seguidor_id=%s", (u["id"],), fetchone=True)["n"]
+    sigo = bool(uid_visor and query(
+        "SELECT 1 FROM seguidores WHERE seguidor_id=%s AND seguido_id=%s",
+        (uid_visor, u["id"]), fetchone=True))
+    # Publicaciones públicas (aprobadas, visibles, sin incluir Modo Incognito para no revelar identidad)
+    filas = query(
+        """SELECT id, nombre_original, nombre_guardado, tipo, asunto, descripcion,
+                  categoria, created_at, visitas_count
+           FROM archivos
+           WHERE usuario_id=%s AND estado='aprobado' AND oculto=FALSE AND categoria<>'Modo Incognito'
+           ORDER BY created_at DESC""",
+        (u["id"],))
+    publicaciones = [{
+        "id":          f["id"],
+        "tipo":        f["tipo"],
+        "url":         f"/api/archivo/{f['nombre_guardado']}",
+        "asunto":      f["asunto"],
+        "descripcion": f["descripcion"],
+        "categoria":   f["categoria"],
+        "fecha":       f["created_at"].strftime("%d/%m/%Y"),
+        "visitas":     f["visitas_count"] or 0,
+    } for f in filas]
+    return jsonify({
+        "username":      u["username"],
+        "nombre":        u["nombre"],
+        "avatar":        f"/api/avatar/{u['avatar']}" if u["avatar"] else None,
+        "seguidores":    seguidores,
+        "siguiendo":     siguiendo,
+        "sigo":          sigo,
+        "es_mio":        uid_visor == u["id"],
+        "autenticado":   uid_visor is not None,
+        "publicaciones": publicaciones,
+    })
+
 # ── Seguir / dejar de seguir a un usuario ─────────────────
 @app.route("/api/usuario/<username>/seguir", methods=["POST"])
 @login_required
@@ -1100,7 +1159,7 @@ def admin_publicados():
 
 @app.route("/api/admin/archivos/<int:archivo_id>/ocultar", methods=["POST"])
 @login_required
-@admin_required
+@permiso_required("eliminar_publicaciones")
 def ocultar_archivo(archivo_id):
     fila = query("SELECT oculto FROM archivos WHERE id=%s", (archivo_id,), fetchone=True)
     nuevo = not fila["oculto"]
@@ -1109,7 +1168,7 @@ def ocultar_archivo(archivo_id):
 
 @app.route("/api/admin/archivos/<int:archivo_id>", methods=["DELETE"])
 @login_required
-@admin_required
+@permiso_required("eliminar_publicaciones")
 def eliminar_archivo_admin(archivo_id):
     fila = query("SELECT * FROM archivos WHERE id=%s", (archivo_id,), fetchone=True)
     if not fila:
@@ -1228,7 +1287,7 @@ def admin_tickets():
 
 @app.route("/api/admin/soporte/<int:tid>/responder", methods=["POST"])
 @login_required
-@admin_required
+@permiso_required("responder_soporte")
 def responder_ticket(tid):
     data      = request.get_json() or {}
     respuesta = (data.get("respuesta") or "").strip()
