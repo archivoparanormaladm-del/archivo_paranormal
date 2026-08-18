@@ -44,6 +44,108 @@ EXT_AUDIO  = {"mp3", "wav", "ogg", "flac", "m4a", "aac"}
 os.makedirs(ADUANA, exist_ok=True)
 os.makedirs(AVATARES, exist_ok=True)
 
+# ══════════════════════════════════════════════════════════
+#  ALMACENAMIENTO  (disco local  ó  S3/R2/B2 compatible)
+# ══════════════════════════════════════════════════════════
+# Los archivos se referencian por "key" (ruta relativa lógica):
+#   aduana/<uuid>.<ext>            → subidas pendientes de revisión
+#   aprobados/<categoria>/<uuid>.<ext> → media publicada
+#   avatares/<uuid>.<ext>          → fotos de perfil
+# Si defines las variables S3_* se usa almacenamiento de objetos
+# (persistente); si no, cae al disco local (efímero en Render free).
+S3_BUCKET   = os.getenv("S3_BUCKET")
+S3_ENDPOINT = os.getenv("S3_ENDPOINT_URL")          # R2/B2; vacío = AWS S3
+S3_KEY      = os.getenv("S3_ACCESS_KEY")
+S3_SECRET   = os.getenv("S3_SECRET_KEY")
+S3_REGION   = os.getenv("S3_REGION", "auto")
+USAR_S3     = bool(S3_BUCKET and S3_KEY and S3_SECRET)
+
+_s3 = None
+def _s3_client():
+    global _s3
+    if _s3 is None:
+        import boto3
+        from botocore.config import Config
+        _s3 = boto3.client(
+            "s3", endpoint_url=S3_ENDPOINT or None,
+            aws_access_key_id=S3_KEY, aws_secret_access_key=S3_SECRET,
+            region_name=S3_REGION, config=Config(signature_version="s3v4"))
+    return _s3
+
+def _ruta_local(key):
+    return os.path.join(UPLOADS_DIR, *key.split("/"))
+
+def st_guardar(file_storage, key):
+    """Guarda un archivo subido (werkzeug FileStorage) bajo la key dada."""
+    if USAR_S3:
+        try: file_storage.stream.seek(0)
+        except Exception: pass
+        _s3_client().upload_fileobj(
+            file_storage.stream, S3_BUCKET, key,
+            ExtraArgs={"ContentType": file_storage.mimetype or "application/octet-stream"})
+    else:
+        ruta = _ruta_local(key)
+        os.makedirs(os.path.dirname(ruta), exist_ok=True)
+        file_storage.save(ruta)
+
+def st_mover(src_key, dst_key):
+    if USAR_S3:
+        cli = _s3_client()
+        cli.copy_object(Bucket=S3_BUCKET, CopySource={"Bucket": S3_BUCKET, "Key": src_key}, Key=dst_key)
+        cli.delete_object(Bucket=S3_BUCKET, Key=src_key)
+    else:
+        r_src, r_dst = _ruta_local(src_key), _ruta_local(dst_key)
+        os.makedirs(os.path.dirname(r_dst), exist_ok=True)
+        if os.path.exists(r_src):
+            os.rename(r_src, r_dst)
+
+def borrar_archivo(key):
+    if USAR_S3:
+        try: _s3_client().delete_object(Bucket=S3_BUCKET, Key=key)
+        except Exception: pass
+    else:
+        r = _ruta_local(key)
+        if os.path.exists(r):
+            try: os.remove(r)
+            except OSError: pass
+
+def servir_archivo_st(key):
+    """Devuelve una respuesta Flask sirviendo el objeto de la key.
+    En S3 redirige a una URL prefirmada de corta duración (soporta Range/seek
+    y descarga la banda del bucket, no del servidor web)."""
+    if USAR_S3:
+        from flask import redirect
+        url = _s3_client().generate_presigned_url(
+            "get_object", Params={"Bucket": S3_BUCKET, "Key": key}, ExpiresIn=3600)
+        return redirect(url)
+    ruta = _ruta_local(key)
+    if not os.path.exists(ruta):
+        abort(404)
+    return send_from_directory(os.path.dirname(ruta), os.path.basename(ruta))
+
+def listar_prefijo(prefix):
+    """Lista las keys existentes bajo un prefijo (para renombrar categorías)."""
+    if USAR_S3:
+        cli = _s3_client(); keys = []; token = None
+        while True:
+            kw = {"Bucket": S3_BUCKET, "Prefix": prefix}
+            if token: kw["ContinuationToken"] = token
+            resp = cli.list_objects_v2(**kw)
+            keys += [o["Key"] for o in resp.get("Contents", [])]
+            if resp.get("IsTruncated"): token = resp.get("NextContinuationToken")
+            else: break
+        return keys
+    base = _ruta_local(prefix)
+    if not os.path.isdir(base):
+        return []
+    return [f"{prefix}/{f}" for f in os.listdir(base)]
+
+def key_de_archivo(fila):
+    """Devuelve la key de storage de una fila de `archivos` según su estado."""
+    if fila["estado"] == "aprobado":
+        return f"aprobados/{fila['categoria']}/{fila['nombre_guardado']}"
+    return f"aduana/{fila['nombre_guardado']}"
+
 # ── Base de datos ──────────────────────────────────────────
 def get_db():
     # Railway (y la mayoría de PaaS) inyecta una sola DATABASE_URL.
@@ -124,8 +226,9 @@ def asegurar_categorias():
     except Exception as e:
         # Si la tabla aún no existe (base sin migrar), no bloquear el arranque.
         print("aviso: no se pudieron sincronizar categorías:", e)
-    for c in nombres:
-        os.makedirs(os.path.join(APROBADOS, c), exist_ok=True)
+    if not USAR_S3:
+        for c in nombres:
+            os.makedirs(os.path.join(APROBADOS, c), exist_ok=True)
 
 asegurar_categorias()
 
@@ -417,8 +520,7 @@ def upload():
     if tipo == "auto":
         tipo = tipo_por_extension(nombre_original)
 
-    ruta_aduana = os.path.join(ADUANA, nombre_guardado)
-    archivo.save(ruta_aduana)
+    st_guardar(archivo, f"aduana/{nombre_guardado}")
 
     query(
         """INSERT INTO archivos
@@ -514,7 +616,7 @@ def servir_archivo(nombre_guardado):
     )
     if not fila:
         abort(404)
-    return send_from_directory(os.path.join(APROBADOS, fila["categoria"]), nombre_guardado)
+    return servir_archivo_st(f"aprobados/{fila['categoria']}/{nombre_guardado}")
 
 # ── Categorías (público: listar) ──────────────────────────
 @app.route("/api/categorias")
@@ -548,7 +650,8 @@ def crear_categoria():
         return jsonify({"error": "Ya existe una categoría con ese nombre"}), 409
     orden = query("SELECT COALESCE(MAX(orden), 0) + 1 AS n FROM categorias", fetchone=True)["n"]
     query("INSERT INTO categorias (nombre, orden) VALUES (%s,%s)", (nombre, orden), commit=True)
-    os.makedirs(os.path.join(APROBADOS, nombre), exist_ok=True)
+    if not USAR_S3:
+        os.makedirs(os.path.join(APROBADOS, nombre), exist_ok=True)
     return jsonify({"ok": True})
 
 @app.route("/api/admin/categorias/<int:cid>", methods=["DELETE"])
@@ -596,7 +699,7 @@ def pendientes():
 @login_required
 @admin_required
 def servir_aduana(nombre_guardado):
-    return send_from_directory(ADUANA, nombre_guardado)
+    return servir_archivo_st(f"aduana/{secure_filename(nombre_guardado)}")
 
 # ── Admin — aprobar ────────────────────────────────────────
 @app.route("/api/admin/aprobar/<int:archivo_id>", methods=["POST"])
@@ -606,10 +709,8 @@ def aprobar(archivo_id):
     fila = query("SELECT * FROM archivos WHERE id=%s AND estado='pendiente'", (archivo_id,), fetchone=True)
     if not fila:
         return jsonify({"error": "Archivo no encontrado"}), 404
-    origen  = os.path.join(ADUANA, fila["nombre_guardado"])
-    destino = os.path.join(APROBADOS, fila["categoria"], fila["nombre_guardado"])
-    os.makedirs(os.path.dirname(destino), exist_ok=True)
-    os.rename(origen, destino)
+    st_mover(f"aduana/{fila['nombre_guardado']}",
+                  f"aprobados/{fila['categoria']}/{fila['nombre_guardado']}")
     query("UPDATE archivos SET estado='aprobado', revisado_at=NOW() WHERE id=%s", (archivo_id,), commit=True)
     return jsonify({"ok": True})
 
@@ -621,9 +722,7 @@ def rechazar(archivo_id):
     fila = query("SELECT * FROM archivos WHERE id=%s AND estado='pendiente'", (archivo_id,), fetchone=True)
     if not fila:
         return jsonify({"error": "Archivo no encontrado"}), 404
-    ruta = os.path.join(ADUANA, fila["nombre_guardado"])
-    if os.path.exists(ruta):
-        os.remove(ruta)
+    borrar_archivo(f"aduana/{fila['nombre_guardado']}")
     query("UPDATE archivos SET estado='rechazado', revisado_at=NOW() WHERE id=%s", (archivo_id,), commit=True)
     return jsonify({"ok": True})
 
@@ -1022,20 +1121,18 @@ def subir_avatar():
     if ext not in EXT_IMAGEN:
         return jsonify({"error": "El avatar debe ser una imagen (jpg, png, webp, gif...)"}), 400
     nombre = f"{uuid.uuid4().hex}.{ext}"
-    os.makedirs(AVATARES, exist_ok=True)
-    archivo.save(os.path.join(AVATARES, nombre))
+    st_guardar(archivo, f"avatares/{nombre}")
     uid = session["user_id"]
     anterior = query("SELECT avatar FROM usuarios WHERE id=%s", (uid,), fetchone=True)
     query("UPDATE usuarios SET avatar=%s WHERE id=%s", (nombre, uid), commit=True)
     session["avatar"] = nombre
     if anterior and anterior["avatar"]:
-        try: os.remove(os.path.join(AVATARES, anterior["avatar"]))
-        except OSError: pass
+        borrar_archivo(f"avatares/{anterior['avatar']}")
     return jsonify({"ok": True, "avatar": f"/api/avatar/{nombre}"})
 
 @app.route("/api/avatar/<nombre>")
 def servir_avatar(nombre):
-    return send_from_directory(AVATARES, secure_filename(nombre))
+    return servir_archivo_st(f"avatares/{secure_filename(nombre)}")
 
 @app.route("/api/usuario/publicaciones/<int:archivo_id>", methods=["POST"])
 @login_required
@@ -1062,13 +1159,7 @@ def eliminar_mi_publicacion(archivo_id):
         return jsonify({"error": "Publicación no encontrada"}), 404
     if fila["usuario_id"] != session["user_id"]:
         return jsonify({"error": "No es tu publicación"}), 403
-    # Borrar archivo físico según estado
-    if fila["estado"] == "aprobado":
-        ruta = os.path.join(APROBADOS, fila["categoria"], fila["nombre_guardado"])
-    else:
-        ruta = os.path.join(ADUANA, fila["nombre_guardado"])
-    if os.path.exists(ruta):
-        os.remove(ruta)
+    borrar_archivo(key_de_archivo(fila))
     query("DELETE FROM archivos WHERE id=%s", (archivo_id,), commit=True)
     return jsonify({"ok": True})
 
@@ -1173,13 +1264,7 @@ def eliminar_archivo_admin(archivo_id):
     fila = query("SELECT * FROM archivos WHERE id=%s", (archivo_id,), fetchone=True)
     if not fila:
         return jsonify({"error": "No encontrado"}), 404
-    # Eliminar archivo físico
-    if fila["estado"] == "aprobado":
-        ruta = os.path.join(APROBADOS, fila["categoria"], fila["nombre_guardado"])
-    else:
-        ruta = os.path.join(ADUANA, fila["nombre_guardado"])
-    if os.path.exists(ruta):
-        os.remove(ruta)
+    borrar_archivo(key_de_archivo(fila))
     query("DELETE FROM archivos WHERE id=%s", (archivo_id,), commit=True)
     return jsonify({"ok": True})
 
@@ -1362,17 +1447,13 @@ def renombrar_categoria(cid):
         return jsonify({"ok": True})
     if query("SELECT id FROM categorias WHERE LOWER(nombre)=LOWER(%s) AND id<>%s", (nuevo, cid), fetchone=True):
         return jsonify({"error": "Ya existe una categoría con ese nombre"}), 409
-    # Mover carpeta en disco
-    origen  = os.path.join(APROBADOS, viejo)
-    destino = os.path.join(APROBADOS, nuevo)
-    os.makedirs(destino, exist_ok=True)
-    if os.path.isdir(origen):
-        for f in os.listdir(origen):
-            os.rename(os.path.join(origen, f), os.path.join(destino, f))
-        try:
-            os.rmdir(origen)
-        except OSError:
-            pass
+    # Mover los archivos aprobados de la categoría (disco u objeto)
+    for key in listar_prefijo(f"aprobados/{viejo}"):
+        nombre_obj = key.rsplit("/", 1)[-1]
+        st_mover(key, f"aprobados/{nuevo}/{nombre_obj}")
+    if not USAR_S3:
+        try: os.rmdir(os.path.join(APROBADOS, viejo))
+        except OSError: pass
     query("UPDATE categorias SET nombre=%s WHERE id=%s", (nuevo, cid), commit=True)
     query("UPDATE archivos SET categoria=%s WHERE categoria=%s", (nuevo, viejo), commit=True)
     return jsonify({"ok": True})
@@ -1390,13 +1471,10 @@ def mover_archivo(archivo_id):
         return jsonify({"error": "Archivo no encontrado"}), 404
     if fila["categoria"] == nueva:
         return jsonify({"ok": True})
-    # Los archivos aprobados viven en disco bajo su categoría; moverlos físicamente.
+    # Los archivos aprobados viven bajo su categoría; moverlos también en el storage.
     if fila["estado"] == "aprobado":
-        origen  = os.path.join(APROBADOS, fila["categoria"], fila["nombre_guardado"])
-        destino_dir = os.path.join(APROBADOS, nueva)
-        os.makedirs(destino_dir, exist_ok=True)
-        if os.path.exists(origen):
-            os.rename(origen, os.path.join(destino_dir, fila["nombre_guardado"]))
+        st_mover(f"aprobados/{fila['categoria']}/{fila['nombre_guardado']}",
+                 f"aprobados/{nueva}/{fila['nombre_guardado']}")
     query("UPDATE archivos SET categoria=%s WHERE id=%s", (nueva, archivo_id), commit=True)
     return jsonify({"ok": True})
 
