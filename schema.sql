@@ -128,6 +128,14 @@ CREATE TABLE IF NOT EXISTS actividad_log (
     created_at  TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- ── Seguidores (una fila = seguidor sigue a seguido) ──────
+CREATE TABLE IF NOT EXISTS seguidores (
+    seguidor_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    seguido_id  INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (seguidor_id, seguido_id)
+);
+
 -- ── Intentos de login (rate limiting por email+IP) ─────────
 CREATE TABLE IF NOT EXISTS login_intentos (
     id          SERIAL PRIMARY KEY,

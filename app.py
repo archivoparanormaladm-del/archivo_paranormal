@@ -449,16 +449,20 @@ def feed():
         limit  = min(30, max(1, int(request.args.get("limit", 6))))
     except (TypeError, ValueError):
         offset, limit = 0, 6
+    uid = session.get("user_id")
     filas = query(
         """SELECT a.*, u.username AS subido_por, u.avatar AS autor_avatar,
                   (SELECT COUNT(*) FROM reacciones r WHERE r.archivo_id=a.id AND r.tipo='like') AS likes,
-                  (SELECT COUNT(*) FROM comentarios c WHERE c.archivo_id=a.id AND c.oculto=FALSE) AS comentarios
+                  (SELECT COUNT(*) FROM comentarios c WHERE c.archivo_id=a.id AND c.oculto=FALSE) AS comentarios,
+                  EXISTS(SELECT 1 FROM reacciones r WHERE r.archivo_id=a.id AND r.usuario_id=%s AND r.tipo='like') AS liked,
+                  EXISTS(SELECT 1 FROM guardados g WHERE g.archivo_id=a.id AND g.usuario_id=%s) AS guardado,
+                  EXISTS(SELECT 1 FROM seguidores s WHERE s.seguidor_id=%s AND s.seguido_id=a.usuario_id) AS siguiendo
            FROM archivos a
            LEFT JOIN usuarios u ON u.id = a.usuario_id
            WHERE a.estado='aprobado' AND a.oculto=FALSE
            ORDER BY a.created_at DESC
            LIMIT %s OFFSET %s""",
-        (limit, offset),
+        (uid, uid, uid, limit, offset),
     )
     resultado = []
     for f in filas:
@@ -475,6 +479,11 @@ def feed():
             "visitas":     f["visitas_count"] or 0,
             "likes":       f["likes"],
             "comentarios": f["comentarios"],
+            "liked":       bool(f["liked"]),
+            "guardado":    bool(f["guardado"]),
+            "siguiendo":   bool(f["siguiendo"]),
+            "es_mio":      uid is not None and f["usuario_id"] == uid,
+            "usuario":     "" if incognito else (f["subido_por"] or ""),
             "subido_por":  "" if incognito else (f["subido_por"] or ""),
             "avatar":      "" if (incognito or not f["autor_avatar"]) else f"/api/avatar/{f['autor_avatar']}",
         })
@@ -1046,6 +1055,25 @@ def eliminar_mi_publicacion(archivo_id):
         os.remove(ruta)
     query("DELETE FROM archivos WHERE id=%s", (archivo_id,), commit=True)
     return jsonify({"ok": True})
+
+# ── Seguir / dejar de seguir a un usuario ─────────────────
+@app.route("/api/usuario/<username>/seguir", methods=["POST"])
+@login_required
+def toggle_seguir(username):
+    objetivo = query("SELECT id FROM usuarios WHERE username=%s", (username.strip().lower(),), fetchone=True)
+    if not objetivo:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+    uid = session["user_id"]
+    if objetivo["id"] == uid:
+        return jsonify({"error": "No puedes seguirte a ti mismo"}), 400
+    existe = query("SELECT 1 FROM seguidores WHERE seguidor_id=%s AND seguido_id=%s",
+                   (uid, objetivo["id"]), fetchone=True)
+    if existe:
+        query("DELETE FROM seguidores WHERE seguidor_id=%s AND seguido_id=%s", (uid, objetivo["id"]), commit=True)
+        return jsonify({"ok": True, "siguiendo": False})
+    query("INSERT INTO seguidores (seguidor_id, seguido_id) VALUES (%s,%s) ON CONFLICT DO NOTHING",
+          (uid, objetivo["id"]), commit=True)
+    return jsonify({"ok": True, "siguiendo": True})
 
 # ── Admin — archivos publicados (gestión) ─────────────────
 @app.route("/api/admin/publicados")

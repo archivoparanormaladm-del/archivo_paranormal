@@ -57,3 +57,49 @@
   .feed { padding: 14px 10px 96px; gap: 16px; }
   .feed-card { border-radius: 14px; }
 }
+
+/* ── Botón Seguir ── */
+.feed-seguir {
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  padding: 6px 14px; border-radius: 20px; cursor: pointer; flex-shrink: 0;
+  background: var(--red-2); color: #fff; border: 1px solid var(--red-2);
+  transition: all .15s;
+}
+.feed-seguir:hover { background: var(--red-dark); }
+.feed-seguir.siguiendo { background: transparent; color: var(--text-2); border-color: var(--border); }
+.feed-seguir.siguiendo:hover { border-color: var(--red-2); color: var(--red); }
+
+/* ── Ver más ── */
+.feed-desc.truncada { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.feed-desc a { color: var(--red); text-decoration: underline; }
+.feed-vermas {
+  background: none; border: none; color: var(--text-3); cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 600; padding: 2px 0 4px;
+}
+.feed-vermas:hover { color: var(--red); }
+
+/* Guardar activo */
+.feed-guardar.activo { color: var(--red); }
+.feed-guardar.activo svg { fill: var(--red); }
+
+/* ── Comentarios inline (estilo Instagram) ── */
+.feed-coments { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--border); }
+.fc-lista { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; max-height: 300px; overflow-y: auto; }
+.fc-cargando, .fc-vacio { font-size: 12px; color: var(--text-3); font-style: italic; }
+.fc-item { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.fc-autor { font-size: 13px; font-weight: 700; color: var(--red); margin-right: 4px; }
+.fc-texto { font-size: 13px; color: var(--text); line-height: 1.5; word-break: break-word; }
+.fc-fecha { font-size: 11px; color: var(--text-3); white-space: nowrap; flex-shrink: 0; }
+.fc-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.fc-input, .fc-nombre {
+  background: var(--bg-2); border: 1px solid var(--border); color: var(--text);
+  font-family: inherit; font-size: 13px; padding: 9px 14px; border-radius: 20px; outline: none;
+}
+.fc-nombre { flex: 0 0 100%; }
+.fc-input { flex: 1; min-width: 0; }
+.fc-input:focus, .fc-nombre:focus { border-color: var(--red-2); }
+.fc-enviar {
+  background: none; border: none; color: var(--red); font-family: inherit;
+  font-size: 13px; font-weight: 700; cursor: pointer; padding: 8px 6px; flex-shrink: 0;
+}
+.fc-enviar:hover { color: var(--red-dark); }
