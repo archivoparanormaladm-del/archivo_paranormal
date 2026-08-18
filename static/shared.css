@@ -171,6 +171,17 @@ body {
 
 .hidden { display: none !important; }
 
+/* ══ Ojo mostrar/ocultar contraseña ══ */
+.pwd-wrap { position: relative; display: block; }
+.pwd-wrap > input { width: 100%; padding-right: 42px !important; }
+.pwd-toggle {
+  position: absolute; top: 50%; right: 10px; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; color: var(--text-3);
+  display: flex; align-items: center; justify-content: center; padding: 4px; line-height: 0;
+  transition: color .15s;
+}
+.pwd-toggle:hover { color: var(--red); }
+
 /* Grupo de botones "movibles" de la barra superior (se ocultan en móvil) */
 .session-primary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 

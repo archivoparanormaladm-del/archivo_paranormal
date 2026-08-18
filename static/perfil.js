@@ -69,6 +69,7 @@ document.getElementById('btn-editar-perfil').addEventListener('click', () => {
       </form>
     </div>`;
   document.body.appendChild(ov);
+  if (typeof initOjosPassword === 'function') initOjosPassword(ov);
   const cerrar = () => ov.remove();
   ov.querySelector('#ep-close').addEventListener('click', cerrar);
   ov.addEventListener('click', e => { if (e.target === ov) cerrar(); });
