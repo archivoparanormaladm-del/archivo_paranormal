@@ -25,113 +25,6 @@ function linkificar(texto) {
     .replace(r, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
 }
 
-/* ── Reproductor liquid glass (video / audio) ──────────── */
-const PICON = {
-  vol:   '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
-  mute:  '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/></svg>',
-  back:  '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="11 19 2 12 11 5 11 19"/><polygon points="22 19 13 12 22 5 22 19"/></svg>',
-  fwd:   '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 19 22 12 13 5 13 19"/><polygon points="2 19 11 12 2 5 2 19"/></svg>',
-  play:  '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>',
-  pause: '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4.2" height="16" rx="1.2"/><rect x="13.8" y="4" width="4.2" height="16" rx="1.2"/></svg>',
-  gear:  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
-  fs:    '<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>',
-  music: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
-};
-
-function reproductorHtml(tipo, url) {
-  const media = tipo === 'video'
-    ? `<video class="gp-blur" src="${url}" muted playsinline preload="auto" tabindex="-1"></video><video class="gp-media" src="${url}" playsinline preload="metadata"></video>`
-    : `<div class="gp-audio-art">${PICON.music}</div><audio class="gp-media" src="${url}" preload="metadata"></audio>`;
-  return `
-    <div class="glass-player ${tipo === 'audio' ? 'gp-is-audio' : ''}">
-      ${media}
-      <div class="gp-bar">
-        <div class="gp-controls">
-          <div class="gp-vol-wrap">
-            <button class="gp-btn gp-mute" title="Silenciar">${PICON.vol}</button>
-            <input type="range" class="gp-range gp-vol" min="0" max="1" step="0.02" value="1" aria-label="Volumen">
-          </div>
-          <div class="gp-transport">
-            <button class="gp-btn gp-back" title="Retroceder 10s">${PICON.back}</button>
-            <button class="gp-btn gp-play gp-play-main" title="Reproducir">${PICON.play}</button>
-            <button class="gp-btn gp-fwd" title="Adelantar 10s">${PICON.fwd}</button>
-          </div>
-          <div class="gp-extra">
-            <button class="gp-btn gp-speed" title="Velocidad">${PICON.gear}<span class="gp-speed-lbl">1×</span></button>
-            ${tipo === 'video' ? `<button class="gp-btn gp-fs" title="Pantalla completa">${PICON.fs}</button>` : ''}
-          </div>
-        </div>
-        <div class="gp-timeline">
-          <span class="gp-time gp-cur">0:00</span>
-          <input type="range" class="gp-range gp-seek" min="0" max="1000" value="0" aria-label="Progreso">
-          <span class="gp-time gp-dur">0:00</span>
-        </div>
-      </div>
-    </div>`;
-}
-
-function activarReproductor(root) {
-  const p = root.querySelector('.glass-player');
-  if (!p) return;
-  const q = s => p.querySelector(s);
-  const media = q('.gp-media');
-  const btnPlay = q('.gp-play'), btnBack = q('.gp-back'), btnFwd = q('.gp-fwd');
-  const btnMute = q('.gp-mute'), vol = q('.gp-vol');
-  const seek = q('.gp-seek'), cur = q('.gp-cur'), dur = q('.gp-dur');
-  const btnSpeed = q('.gp-speed'), speedLbl = q('.gp-speed-lbl'), btnFs = q('.gp-fs');
-  const blur = q('.gp-blur');
-
-  // Capa desenfocada de fondo (relleno "ambient") que sigue al video principal
-  if (blur) {
-    media.addEventListener('play',   () => { blur.play().catch(() => {}); });
-    media.addEventListener('pause',  () => blur.pause());
-    media.addEventListener('seeking',() => { try { blur.currentTime = media.currentTime; } catch {} });
-    media.addEventListener('ratechange', () => { blur.playbackRate = media.playbackRate; });
-  }
-
-  const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
-  const pinta = (el, pct) => el.style.setProperty('--pct', pct + '%');
-
-  const pintarPlay = () => { btnPlay.innerHTML = media.paused ? PICON.play : PICON.pause; };
-  btnPlay.addEventListener('click', () => media.paused ? media.play() : media.pause());
-  media.addEventListener('play', pintarPlay);
-  media.addEventListener('pause', pintarPlay);
-  media.addEventListener('ended', pintarPlay);
-  btnBack.addEventListener('click', () => media.currentTime = Math.max(0, media.currentTime - 10));
-  btnFwd.addEventListener('click', () => media.currentTime = Math.min(media.duration || Infinity, media.currentTime + 10));
-
-  media.addEventListener('loadedmetadata', () => { dur.textContent = fmt(media.duration); });
-  media.addEventListener('timeupdate', () => {
-    cur.textContent = fmt(media.currentTime);
-    const pct = media.duration ? (media.currentTime / media.duration) * 100 : 0;
-    seek.value = pct * 10; pinta(seek, pct);
-  });
-  seek.addEventListener('input', () => { if (media.duration) { media.currentTime = (seek.value / 1000) * media.duration; pinta(seek, seek.value / 10); } });
-
-  const pintarVol = () => {
-    const v = media.muted ? 0 : media.volume;
-    btnMute.innerHTML = v === 0 ? PICON.mute : PICON.vol;
-    pinta(vol, v * 100);
-  };
-  vol.addEventListener('input', () => { media.volume = +vol.value; media.muted = +vol.value === 0; pintarVol(); });
-  btnMute.addEventListener('click', () => {
-    media.muted = !media.muted;
-    if (!media.muted && media.volume === 0) media.volume = 1;
-    vol.value = media.muted ? 0 : media.volume;
-    pintarVol();
-  });
-
-  const vel = [1, 1.25, 1.5, 2, 0.5]; let vi = 0;
-  btnSpeed.addEventListener('click', () => { vi = (vi + 1) % vel.length; media.playbackRate = vel[vi]; speedLbl.textContent = vel[vi] + '×'; });
-
-  btnFs?.addEventListener('click', () => {
-    if (document.fullscreenElement) document.exitFullscreen();
-    else (media.requestFullscreen || media.webkitEnterFullscreen || media.webkitRequestFullscreen)?.call(media);
-  });
-  if (media.tagName === 'VIDEO') media.addEventListener('click', () => media.paused ? media.play() : media.pause());
-
-  pintarPlay(); pintarVol(); pinta(seek, 0);
-}
 
 /* ── Panel derecho ─────────────────────────────────────── */
 async function mostrarDetalle(a) {
@@ -334,11 +227,6 @@ async function enviarComentario(archivoId) {
   }
 }
 
-/* ── Avatar del autor junto al usuario ──────────────────── */
-function avatarChip(a) {
-  if (a.avatar) return `<img class="autor-avatar" src="${a.avatar}" alt="" loading="lazy">`;
-  return `<span class="autor-avatar autor-avatar-ph"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></span>`;
-}
 
 /* ── Miniatura de previsualización ──────────────────────── */
 function miniatura(a) {

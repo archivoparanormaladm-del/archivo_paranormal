@@ -262,9 +262,9 @@ def registrar_intento(email, ip):
 
 @app.route("/")
 def index():
-    # Landing pública: se muestra el contenido (carpetas) sin necesidad de login,
-    # al estilo YouTube. El login/registro vive en /index.html.
-    return send_from_directory("static", "dashboard.html")
+    # Landing pública: feed tipo Tumblr con las últimas publicaciones.
+    # Las carpetas (categorías) están en /dashboard.html; el login en /index.html.
+    return send_from_directory("static", "feed.html")
 
 @app.route("/<path:filename>")
 def static_files(filename):
@@ -436,6 +436,45 @@ def archivos_por_categoria(categoria):
             "url":         f"/api/archivo/{f['nombre_guardado']}",
             "fecha":       f["created_at"].strftime("%d/%m/%Y"),
             "visitas":     f["visitas_count"] or 0,
+            "subido_por":  "" if incognito else (f["subido_por"] or ""),
+            "avatar":      "" if (incognito or not f["autor_avatar"]) else f"/api/avatar/{f['autor_avatar']}",
+        })
+    return jsonify(resultado)
+
+# ── Feed global (home tipo Tumblr) ────────────────────────
+@app.route("/api/feed")
+def feed():
+    try:
+        offset = max(0, int(request.args.get("offset", 0)))
+        limit  = min(30, max(1, int(request.args.get("limit", 6))))
+    except (TypeError, ValueError):
+        offset, limit = 0, 6
+    filas = query(
+        """SELECT a.*, u.username AS subido_por, u.avatar AS autor_avatar,
+                  (SELECT COUNT(*) FROM reacciones r WHERE r.archivo_id=a.id AND r.tipo='like') AS likes,
+                  (SELECT COUNT(*) FROM comentarios c WHERE c.archivo_id=a.id AND c.oculto=FALSE) AS comentarios
+           FROM archivos a
+           LEFT JOIN usuarios u ON u.id = a.usuario_id
+           WHERE a.estado='aprobado' AND a.oculto=FALSE
+           ORDER BY a.created_at DESC
+           LIMIT %s OFFSET %s""",
+        (limit, offset),
+    )
+    resultado = []
+    for f in filas:
+        incognito = f["categoria"] == "Modo Incognito"
+        resultado.append({
+            "id":          f["id"],
+            "nombre":      f["nombre_original"],
+            "tipo":        f["tipo"],
+            "url":         f"/api/archivo/{f['nombre_guardado']}",
+            "asunto":      f["asunto"],
+            "descripcion": f["descripcion"],
+            "categoria":   f["categoria"],
+            "fecha":       f["created_at"].strftime("%d/%m/%Y"),
+            "visitas":     f["visitas_count"] or 0,
+            "likes":       f["likes"],
+            "comentarios": f["comentarios"],
             "subido_por":  "" if incognito else (f["subido_por"] or ""),
             "avatar":      "" if (incognito or not f["autor_avatar"]) else f"/api/avatar/{f['autor_avatar']}",
         })

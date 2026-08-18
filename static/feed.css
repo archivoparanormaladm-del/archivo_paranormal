@@ -1,0 +1,59 @@
+.feed {
+  max-width: 620px; margin: 0 auto;
+  padding: 24px 16px 100px;
+  display: flex; flex-direction: column; gap: 22px;
+}
+.feed-cargando, .feed-vacio {
+  text-align: center; color: var(--text-3); font-size: 14px; padding: 50px 0;
+}
+.feed-loader { display: flex; justify-content: center; padding: 10px 0 80px; }
+
+.feed-card {
+  background: var(--bg-1); border: 1px solid var(--border);
+  border-radius: 16px; padding: 14px 16px 10px;
+}
+
+.feed-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.feed-head .autor-avatar { width: 36px; height: 36px; margin-right: 0; }
+.feed-head-info { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+.feed-user { font-size: 14px; font-weight: 700; color: var(--text); }
+.feed-fecha { font-size: 12px; color: var(--text-3); }
+.feed-cat {
+  font-size: 11px; font-weight: 600; color: var(--red); text-decoration: none;
+  background: var(--accent-soft); border: 1px solid var(--accent-soft-bd);
+  padding: 4px 11px; border-radius: 20px; white-space: nowrap; flex-shrink: 0;
+}
+.feed-cat:hover { filter: brightness(1.1); }
+
+.feed-media {
+  position: relative; overflow: hidden; border-radius: 14px;
+  background: #0a0a0a; display: flex; align-items: center; justify-content: center;
+  min-height: 180px; max-height: 74vh; margin-bottom: 12px;
+}
+.feed-media img.media-main { max-width: 100%; max-height: 74vh; object-fit: contain; display: block; position: relative; z-index: 1; }
+
+.feed-asunto { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; word-break: break-word; }
+.feed-desc { font-size: 14px; color: var(--text-2); line-height: 1.6; margin-bottom: 8px; word-break: break-word; white-space: pre-wrap; }
+
+.feed-stats {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px;
+}
+.feed-stat {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--text-2); background: none; border: none;
+  cursor: pointer; text-decoration: none; font-family: inherit;
+  padding: 6px 10px; border-radius: 8px; transition: color .15s, background .15s;
+}
+.feed-stat:hover { color: var(--red); background: var(--bg-2); }
+.feed-like.activo { color: var(--red); }
+.feed-like.activo svg { fill: var(--red); }
+.feed-abrir { margin-left: auto; font-weight: 600; color: var(--red); }
+
+/* Modo claro: fondo de la media */
+:root[data-modo="claro"] .feed-media { background: #e4e4e7; }
+
+@media (max-width: 680px) {
+  .feed { padding: 14px 10px 96px; gap: 16px; }
+  .feed-card { border-radius: 14px; }
+}

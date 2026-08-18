@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>Inicio — Archivo Paranormal</title>
+<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="carpeta.css">
+<link rel="stylesheet" href="feed.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" onclick="irCarpetas()" title="Ver carpetas / categorías">
+    <img src="/logo.png" alt="Archivo Paranormal">
+  </a>
+  <div class="navbar-nav" id="navbar-nav"></div>
+  <div class="navbar-session" id="session-bar"></div>
+</nav>
+
+<div class="feed" id="feed">
+  <p class="feed-cargando" id="feed-cargando">Cargando publicaciones...</p>
+</div>
+<div class="feed-loader hidden" id="feed-loader"><div class="loading-spinner"></div></div>
+
+<div class="vhs-overlay"></div>
+<script src="temas.js"></script>
+<script src="auth.js"></script>
+<script src="feed.js"></script>
+</body>
+</html>
