@@ -146,6 +146,16 @@ def key_de_archivo(fila):
         return f"aprobados/{fila['categoria']}/{fila['nombre_guardado']}"
     return f"aduana/{fila['nombre_guardado']}"
 
+def crear_notificacion(usuario_id, actor_id, tipo, archivo_id=None):
+    """Crea una notificación para `usuario_id`. No notifica acciones propias."""
+    if not usuario_id or usuario_id == actor_id:
+        return
+    try:
+        query("INSERT INTO notificaciones (usuario_id, actor_id, tipo, archivo_id) VALUES (%s,%s,%s,%s)",
+              (usuario_id, actor_id, tipo, archivo_id), commit=True)
+    except Exception as e:
+        print("aviso: no se pudo crear notificación:", e)
+
 # ── Base de datos ──────────────────────────────────────────
 def get_db():
     # Railway (y la mayoría de PaaS) inyecta una sola DATABASE_URL.
@@ -568,8 +578,15 @@ def feed():
     except (TypeError, ValueError):
         offset, limit = 0, 6
     uid = session.get("user_id")
+    solo_siguiendo = request.args.get("filtro") == "siguiendo" and uid is not None
+    filtro_sql = ("AND a.usuario_id IN (SELECT seguido_id FROM seguidores WHERE seguidor_id=%s) "
+                  if solo_siguiendo else "")
+    params = [uid, uid, uid]
+    if solo_siguiendo:
+        params.append(uid)
+    params += [limit, offset]
     filas = query(
-        """SELECT a.*, u.username AS subido_por, u.avatar AS autor_avatar,
+        f"""SELECT a.*, u.username AS subido_por, u.avatar AS autor_avatar,
                   (SELECT COUNT(*) FROM reacciones r WHERE r.archivo_id=a.id AND r.tipo='like') AS likes,
                   (SELECT COUNT(*) FROM comentarios c WHERE c.archivo_id=a.id AND c.oculto=FALSE) AS comentarios,
                   EXISTS(SELECT 1 FROM reacciones r WHERE r.archivo_id=a.id AND r.usuario_id=%s AND r.tipo='like') AS liked,
@@ -577,10 +594,10 @@ def feed():
                   EXISTS(SELECT 1 FROM seguidores s WHERE s.seguidor_id=%s AND s.seguido_id=a.usuario_id) AS siguiendo
            FROM archivos a
            LEFT JOIN usuarios u ON u.id = a.usuario_id
-           WHERE a.estado='aprobado' AND a.oculto=FALSE
+           WHERE a.estado='aprobado' AND a.oculto=FALSE {filtro_sql}
            ORDER BY a.created_at DESC
            LIMIT %s OFFSET %s""",
-        (uid, uid, uid, limit, offset),
+        tuple(params),
     )
     resultado = []
     for f in filas:
@@ -955,6 +972,10 @@ def reaccionar(archivo_id):
             query("INSERT INTO reacciones (archivo_id, usuario_id, tipo) VALUES (%s,%s,%s)",
                   (archivo_id, usuario_id, tipo), commit=True)
             accion = "agregada"
+            if tipo == "like":
+                dueno = query("SELECT usuario_id FROM archivos WHERE id=%s", (archivo_id,), fetchone=True)
+                if dueno:
+                    crear_notificacion(dueno["usuario_id"], usuario_id, "like", archivo_id)
     else:
         existente = query(
             "SELECT id, tipo FROM reacciones WHERE archivo_id=%s AND ip=%s AND usuario_id IS NULL",
@@ -1023,6 +1044,10 @@ def agregar_comentario(archivo_id):
     query(
         "INSERT INTO comentarios (archivo_id, usuario_id, nombre_anon, texto) VALUES (%s,%s,%s,%s)",
         (archivo_id, usuario_id, nombre_anon, texto), commit=True)
+    if usuario_id:
+        dueno = query("SELECT usuario_id FROM archivos WHERE id=%s", (archivo_id,), fetchone=True)
+        if dueno:
+            crear_notificacion(dueno["usuario_id"], usuario_id, "comentario", archivo_id)
     return jsonify({"ok": True})
 
 @app.route("/api/archivos/<int:archivo_id>/guardar", methods=["POST"])
@@ -1223,7 +1248,94 @@ def toggle_seguir(username):
         return jsonify({"ok": True, "siguiendo": False})
     query("INSERT INTO seguidores (seguidor_id, seguido_id) VALUES (%s,%s) ON CONFLICT DO NOTHING",
           (uid, objetivo["id"]), commit=True)
+    crear_notificacion(objetivo["id"], uid, "seguir")
     return jsonify({"ok": True, "siguiendo": True})
+
+# ── Listas de seguidores / seguidos ───────────────────────
+def _lista_usuarios(sql, params):
+    filas = query(sql, params)
+    return jsonify([{
+        "username": f["username"],
+        "nombre":   f["nombre"],
+        "avatar":   f"/api/avatar/{f['avatar']}" if f["avatar"] else None,
+    } for f in filas])
+
+@app.route("/api/usuario/<username>/seguidores")
+def lista_seguidores(username):
+    u = query("SELECT id FROM usuarios WHERE username=%s", (username.strip().lower(),), fetchone=True)
+    if not u:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+    return _lista_usuarios(
+        """SELECT us.username, us.nombre, us.avatar
+           FROM seguidores s JOIN usuarios us ON us.id = s.seguidor_id
+           WHERE s.seguido_id=%s ORDER BY s.created_at DESC""", (u["id"],))
+
+@app.route("/api/usuario/<username>/siguiendo")
+def lista_siguiendo(username):
+    u = query("SELECT id FROM usuarios WHERE username=%s", (username.strip().lower(),), fetchone=True)
+    if not u:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+    return _lista_usuarios(
+        """SELECT us.username, us.nombre, us.avatar
+           FROM seguidores s JOIN usuarios us ON us.id = s.seguido_id
+           WHERE s.seguidor_id=%s ORDER BY s.created_at DESC""", (u["id"],))
+
+# ── Notificaciones ────────────────────────────────────────
+@app.route("/api/notificaciones")
+@login_required
+def get_notificaciones():
+    uid = session["user_id"]
+    filas = query(
+        """SELECT n.id, n.tipo, n.archivo_id, n.leida, n.created_at,
+                  u.username AS actor, u.avatar AS actor_avatar,
+                  a.categoria, a.asunto
+           FROM notificaciones n
+           LEFT JOIN usuarios u ON u.id = n.actor_id
+           LEFT JOIN archivos a ON a.id = n.archivo_id
+           WHERE n.usuario_id=%s
+           ORDER BY n.created_at DESC
+           LIMIT 40""", (uid,))
+    def texto(f):
+        act = '@' + (f["actor"] or 'alguien')
+        if f["tipo"] == "seguir":     return f"{act} empezó a seguirte"
+        if f["tipo"] == "comentario": return f"{act} comentó tu publicación"
+        if f["tipo"] == "like":       return f"a {act} le gustó tu publicación"
+        return f"{act}"
+    def enlace(f):
+        if f["archivo_id"] and f["categoria"]:
+            return f"/carpeta.html?cat={f['categoria']}&archivo={f['archivo_id']}"
+        if f["tipo"] == "seguir" and f["actor"]:
+            return f"/perfil.html?u={f['actor']}"
+        return None
+    no_leidas = query("SELECT COUNT(*) AS n FROM notificaciones WHERE usuario_id=%s AND leida=FALSE",
+                      (uid,), fetchone=True)["n"]
+    return jsonify({
+        "no_leidas": no_leidas,
+        "items": [{
+            "id":     f["id"],
+            "tipo":   f["tipo"],
+            "texto":  texto(f),
+            "enlace": enlace(f),
+            "avatar": f"/api/avatar/{f['actor_avatar']}" if f["actor_avatar"] else None,
+            "leida":  f["leida"],
+            "fecha":  f["created_at"].strftime("%d/%m/%Y %H:%M"),
+        } for f in filas],
+    })
+
+@app.route("/api/notificaciones/count")
+@login_required
+def contar_notificaciones():
+    uid = session["user_id"]
+    n = query("SELECT COUNT(*) AS n FROM notificaciones WHERE usuario_id=%s AND leida=FALSE",
+              (uid,), fetchone=True)["n"]
+    return jsonify({"no_leidas": n})
+
+@app.route("/api/notificaciones/leer", methods=["POST"])
+@login_required
+def marcar_leidas():
+    query("UPDATE notificaciones SET leida=TRUE WHERE usuario_id=%s AND leida=FALSE",
+          (session["user_id"],), commit=True)
+    return jsonify({"ok": True})
 
 # ── Admin — archivos publicados (gestión) ─────────────────
 @app.route("/api/admin/publicados")

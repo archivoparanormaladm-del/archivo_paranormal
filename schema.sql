@@ -136,6 +136,18 @@ CREATE TABLE IF NOT EXISTS seguidores (
     PRIMARY KEY (seguidor_id, seguido_id)
 );
 
+-- ── Notificaciones (te siguieron / comentaron / like) ─────
+CREATE TABLE IF NOT EXISTS notificaciones (
+    id          SERIAL PRIMARY KEY,
+    usuario_id  INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,  -- destinatario
+    actor_id    INT REFERENCES usuarios(id) ON DELETE CASCADE,           -- quien la generó
+    tipo        VARCHAR(20) NOT NULL,     -- seguir | comentario | like
+    archivo_id  INT REFERENCES archivos(id) ON DELETE CASCADE,
+    leida       BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_notif_usuario ON notificaciones(usuario_id, leida);
+
 -- ── Intentos de login (rate limiting por email+IP) ─────────
 CREATE TABLE IF NOT EXISTS login_intentos (
     id          SERIAL PRIMARY KEY,

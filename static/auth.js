@@ -145,8 +145,78 @@ async function renderSessionBar() {
     sessionBar.appendChild(btnSalir);
   }
 
+  if (sessionBar && me.autenticado) initNotificaciones(sessionBar);
+
   renderBottomNav(me);
   return me;
+}
+
+/* ── Notificaciones ─────────────────────────────────────── */
+function initNotificaciones(sessionBar) {
+  // Campana siempre visible (también en móvil), antes del botón de salir.
+  const btn = document.createElement('button');
+  btn.className = 'btn-top btn-logout btn-notif logout-top';
+  btn.id = 'btn-notif';
+  btn.title = 'Notificaciones'; btn.setAttribute('aria-label', 'Notificaciones');
+  btn.style.position = 'relative';
+  btn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+    <span class="notif-badge hidden" id="notif-badge">0</span>`;
+  // Insertar antes del botón de cerrar sesión si ya existe; si no, al final.
+  const salir = sessionBar.querySelector('.logout-top:not(.btn-notif)');
+  sessionBar.insertBefore(btn, salir || null);
+  actualizarBadgeNotif();
+  btn.addEventListener('click', e => { e.stopPropagation(); togglePanelNotif(); });
+}
+
+async function actualizarBadgeNotif() {
+  try {
+    const d = await fetch('/api/notificaciones/count').then(r => r.json());
+    const badge = document.getElementById('notif-badge');
+    if (!badge) return;
+    if (d.no_leidas > 0) { badge.textContent = d.no_leidas > 99 ? '99+' : d.no_leidas; badge.classList.remove('hidden'); }
+    else badge.classList.add('hidden');
+  } catch {}
+}
+
+async function togglePanelNotif() {
+  let panel = document.getElementById('notif-panel');
+  if (panel) { panel.remove(); return; }
+  panel = document.createElement('div');
+  panel.id = 'notif-panel';
+  panel.className = 'notif-panel';
+  panel.innerHTML = '<div class="notif-head">Notificaciones</div><div class="notif-lista"><p class="notif-cargando">Cargando...</p></div>';
+  document.body.appendChild(panel);
+  // Posicionar bajo la campana
+  const btn = document.getElementById('btn-notif');
+  const r = btn.getBoundingClientRect();
+  panel.style.top = (r.bottom + 8) + 'px';
+  panel.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+  // Cerrar al hacer clic fuera
+  setTimeout(() => document.addEventListener('click', cerrarPanelNotifFuera), 0);
+
+  let data;
+  try { data = await fetch('/api/notificaciones').then(r => r.json()); } catch { data = { items: [] }; }
+  const lista = panel.querySelector('.notif-lista');
+  if (!data.items.length) {
+    lista.innerHTML = '<p class="notif-vacio">No tienes notificaciones.</p>';
+  } else {
+    lista.innerHTML = data.items.map(n => `
+      <a class="notif-item ${n.leida ? '' : 'no-leida'}" href="${n.enlace || '#'}">
+        <span class="notif-ico">${n.tipo === 'seguir' ? '👤' : n.tipo === 'like' ? '❤️' : '💬'}</span>
+        <span class="notif-txt">${n.texto}<span class="notif-fecha">${n.fecha}</span></span>
+      </a>`).join('');
+  }
+  // Marcar como leídas
+  try { await fetch('/api/notificaciones/leer', { method: 'POST' }); actualizarBadgeNotif(); } catch {}
+}
+
+function cerrarPanelNotifFuera(e) {
+  const panel = document.getElementById('notif-panel');
+  if (panel && !panel.contains(e.target) && e.target.id !== 'btn-notif') {
+    panel.remove();
+    document.removeEventListener('click', cerrarPanelNotifFuera);
+  }
 }
 
 /* ── Menú inferior flotante (móvil / tablet) ──────────────

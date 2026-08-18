@@ -1,9 +1,31 @@
 const FEED_LIMIT = 6;
 let feedOffset = 0, feedCargando = false, feedFin = false;
 let feedMe = {};
+let feedFiltro = 'todos';
 const feedWrap = document.getElementById('feed');
 
-renderSessionBar().then(me => { feedMe = me || {}; cargarMasFeed(); });
+renderSessionBar().then(me => {
+  feedMe = me || {};
+  // Mostrar pestañas Para ti / Siguiendo solo a usuarios autenticados
+  if (feedMe.autenticado) {
+    const tabs = document.getElementById('feed-tabs');
+    tabs.classList.remove('hidden');
+    tabs.querySelectorAll('.feed-tab').forEach(t => t.addEventListener('click', () => {
+      if (t.classList.contains('active')) return;
+      tabs.querySelectorAll('.feed-tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      feedFiltro = t.dataset.filtro;
+      reiniciarFeed();
+    }));
+  }
+  cargarMasFeed();
+});
+
+function reiniciarFeed() {
+  feedOffset = 0; feedFin = false; feedCargando = false;
+  feedWrap.innerHTML = '<p class="feed-cargando" id="feed-cargando">Cargando publicaciones...</p>';
+  cargarMasFeed();
+}
 
 // Scroll infinito
 window.addEventListener('scroll', () => {
@@ -29,12 +51,15 @@ async function cargarMasFeed() {
   feedCargando = true;
   document.getElementById('feed-loader').classList.remove('hidden');
   let data = [];
-  try { data = await fetch(`/api/feed?offset=${feedOffset}&limit=${FEED_LIMIT}`).then(r => r.json()); } catch {}
+  const q = feedFiltro === 'siguiendo' ? '&filtro=siguiendo' : '';
+  try { data = await fetch(`/api/feed?offset=${feedOffset}&limit=${FEED_LIMIT}${q}`).then(r => r.json()); } catch {}
   document.getElementById('feed-loader').classList.add('hidden');
   document.getElementById('feed-cargando')?.remove();
   if (!data.length) {
     feedFin = true; feedCargando = false;
-    if (feedOffset === 0) feedWrap.innerHTML = '<p class="feed-vacio">Aún no hay publicaciones. ¡Sé el primero en subir algo!</p>';
+    if (feedOffset === 0) feedWrap.innerHTML = feedFiltro === 'siguiendo'
+      ? '<p class="feed-vacio">Aún no sigues a nadie o quienes sigues no han publicado. ¡Explora "Para ti"!</p>'
+      : '<p class="feed-vacio">Aún no hay publicaciones. ¡Sé el primero en subir algo!</p>';
     return;
   }
   feedOffset += data.length;

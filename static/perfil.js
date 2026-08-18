@@ -113,6 +113,39 @@ function setContadores({ seguidores = 0, siguiendo = 0 }) {
   document.getElementById('pc-sig').textContent = siguiendo;
 }
 
+document.getElementById('pc-btn-seg')?.addEventListener('click', () => abrirLista('seguidores', 'Seguidores'));
+document.getElementById('pc-btn-sig')?.addEventListener('click', () => abrirLista('siguiendo', 'Siguiendo'));
+
+async function abrirLista(tipo, titulo) {
+  if (!PERFIL_USER) return;
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.innerHTML = `
+    <div class="modal-box">
+      <button class="modal-close" id="lu-close">✕</button>
+      <p class="modal-title">${titulo}</p>
+      <div class="lista-usuarios" id="lu-lista"><p class="cargando-txt">Cargando...</p></div>
+    </div>`;
+  document.body.appendChild(ov);
+  const cerrar = () => ov.remove();
+  ov.querySelector('#lu-close').addEventListener('click', cerrar);
+  ov.addEventListener('click', e => { if (e.target === ov) cerrar(); });
+  let data = [];
+  try { data = await fetch(`/api/usuario/${encodeURIComponent(PERFIL_USER)}/${tipo}`).then(r => r.json()); } catch {}
+  const lista = ov.querySelector('#lu-lista');
+  if (!Array.isArray(data) || !data.length) {
+    lista.innerHTML = `<p class="vacio-txt">${tipo === 'seguidores' ? 'Sin seguidores todavía.' : 'No sigue a nadie todavía.'}</p>`;
+    return;
+  }
+  lista.innerHTML = data.map(u => `
+    <a class="lu-item" href="/perfil.html?u=${encodeURIComponent(u.username)}">
+      ${u.avatar
+        ? `<img class="lu-avatar" src="${u.avatar}" alt="">`
+        : `<span class="lu-avatar lu-avatar-ph">${(u.nombre || u.username || '?')[0].toUpperCase()}</span>`}
+      <span class="lu-datos"><span class="lu-nombre">${(u.nombre || '').replace(/</g,'&lt;')}</span><span class="lu-user">@${u.username}</span></span>
+    </a>`).join('');
+}
+
 /* ── Subir avatar (solo mi perfil) ── */
 document.getElementById('avatar-wrap').addEventListener('click', () => {
   if (MODO_PUBLICO) return;

@@ -3,6 +3,21 @@
   padding: 24px 16px 100px;
   display: flex; flex-direction: column; gap: 22px;
 }
+
+/* ── Pestañas Para ti / Siguiendo ── */
+.feed-tabs {
+  max-width: 620px; margin: 18px auto 0; padding: 0 16px;
+  display: flex; gap: 8px;
+}
+.feed-tab {
+  flex: 1; font-family: inherit; font-size: 14px; font-weight: 700;
+  padding: 10px 0; border-radius: 12px; cursor: pointer;
+  background: var(--bg-1); color: var(--text-2); border: 1px solid var(--border);
+  transition: all .15s;
+}
+.feed-tab:hover { color: var(--text); }
+.feed-tab.active { background: var(--accent-soft); color: var(--red); border-color: var(--accent-soft-bd); }
+.feed-tabs + .feed { padding-top: 14px; }
 .feed-cargando, .feed-vacio {
   text-align: center; color: var(--text-3); font-size: 14px; padding: 50px 0;
 }
