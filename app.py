@@ -199,7 +199,8 @@ def key_de_archivo(fila):
 
 # ── Optimización de imágenes (Pillow) ─────────────────────
 try:
-    from PIL import Image, ImageOps
+    from PIL import Image, ImageOps, ImageDraw, ImageFont, ImageFilter, ImageSequence, ImageFile
+    ImageFile.LOAD_TRUNCATED_IMAGES = True   # tolerar archivos ligeramente truncados
     _PIL_OK = True
 except Exception:
     _PIL_OK = False
@@ -247,6 +248,91 @@ def miniatura_bytes(data, ext):
         return _pil_a_bytes(img, ext if ext.lower() in EXT_OPTIMIZABLE else "jpg")
     except Exception:
         return None
+
+# ── Historias con marca de agua (formato 9:16 para Instagram/Tumblr/Reddit) ──
+STORY_W, STORY_H = 1080, 1920
+_ROJO = (225, 29, 42)
+
+def _fuente(size):
+    try:
+        return ImageFont.load_default(size=size)   # Pillow ≥10.1 trae fuente escalable
+    except Exception:
+        return ImageFont.load_default()
+
+def _marca_wordmark(draw, x, y, size, anchor_right=False):
+    """Dibuja 'DARK FILES' (DARK blanco + FILES rojo). Devuelve el ancho total."""
+    f = _fuente(size)
+    w_dark  = draw.textlength("DARK ", font=f)
+    w_files = draw.textlength("FILES", font=f)
+    total = w_dark + w_files
+    if anchor_right:
+        x -= total
+    draw.text((x, y), "DARK ", font=f, fill=(255, 255, 255))
+    draw.text((x + w_dark, y), "FILES", font=f, fill=_ROJO)
+    return total
+
+def historia_imagen(data, autor, asunto=None):
+    """Compone una imagen estática en una historia 9:16 con marca de agua."""
+    import io
+    orig = ImageOps.exif_transpose(Image.open(io.BytesIO(data)))
+    src = orig.convert("RGB")
+    # Fondo: la imagen recortada a 9:16, desenfocada y oscurecida
+    bg = ImageOps.fit(src, (STORY_W, STORY_H), Image.LANCZOS).filter(ImageFilter.GaussianBlur(45))
+    bg = Image.eval(bg, lambda p: int(p * 0.5)).convert("RGB")
+    # Imagen principal centrada (respetando transparencia sobre el fondo)
+    fg = orig.convert("RGBA")
+    fg.thumbnail((STORY_W - 120, STORY_H - 560), Image.LANCZOS)
+    pos = ((STORY_W - fg.width) // 2, (STORY_H - fg.height) // 2)
+    bg.paste(fg, pos, fg)
+    _pintar_marca_final(bg, autor, asunto)
+    out = io.BytesIO(); bg.save(out, "JPEG", quality=88, optimize=True)
+    return out.getvalue()
+
+def _pintar_marca_final(canvas, autor, asunto=None):
+    draw = ImageDraw.Draw(canvas, "RGBA")
+    _marca_wordmark(draw, 46, 46, 52)                       # logo arriba-izquierda
+    if asunto:
+        fa = _fuente(46)
+        txt = asunto if len(asunto) <= 42 else asunto[:41] + "…"
+        tw = draw.textlength(txt, font=fa)
+        draw.text(((STORY_W - tw) / 2, STORY_H - 210), txt, font=fa, fill=(255, 255, 255))
+    # Pie centrado: DARK FILES · @autor
+    handle = f"@{autor}" if autor else ""
+    f = _fuente(40)
+    w_marca = draw.textlength("DARK FILES", font=f)
+    w_rest  = draw.textlength((" · " + handle) if handle else "", font=f)
+    x0 = (STORY_W - (w_marca + w_rest)) / 2
+    y0 = STORY_H - 110
+    ancho = _marca_wordmark(draw, x0, y0, 40)
+    if handle:
+        draw.text((x0 + ancho, y0), " · " + handle, font=f, fill=(235, 235, 235))
+
+def historia_gif(data, autor):
+    """Marca de agua sobre un GIF conservando la animación (tamaño acotado)."""
+    import io
+    src = Image.open(io.BytesIO(data))
+    MAXW = 640
+    frames, durations = [], []
+    for frame in ImageSequence.Iterator(src):
+        fr = frame.convert("RGB")
+        if fr.width > MAXW:
+            h = int(fr.height * MAXW / fr.width)
+            fr = fr.resize((MAXW, h), Image.LANCZOS)
+        W, H = fr.width, fr.height + 62
+        canvas = Image.new("RGB", (W, H), (17, 18, 20))
+        canvas.paste(fr, (0, 0))
+        draw = ImageDraw.Draw(canvas)
+        _marca_wordmark(draw, 14, fr.height + 16, 28)
+        if autor:
+            f = _fuente(26)
+            hw = draw.textlength("@" + autor, font=f)
+            draw.text((W - hw - 14, fr.height + 18), "@" + autor, font=f, fill=(210, 210, 210))
+        frames.append(canvas.convert("P", palette=Image.ADAPTIVE, colors=128))
+        durations.append(frame.info.get("duration", 90))
+    out = io.BytesIO()
+    frames[0].save(out, "GIF", save_all=True, append_images=frames[1:],
+                   duration=durations, loop=0, optimize=True, disposal=2)
+    return out.getvalue()
 
 def enviar_email(destino, asunto, cuerpo):
     """Envía un correo por SMTP si está configurado. Si no, lo registra en el
@@ -860,6 +946,37 @@ def servir_thumb(nombre_guardado):
             return servir_archivo_st(original)   # fallback: original
         st_guardar_bytes(mini, thumb_key)
     return servir_archivo_st(thumb_key)
+
+# ── Historia con marca de agua (para compartir tipo Instagram) ──
+@app.route("/api/historia/<int:archivo_id>")
+def historia(archivo_id):
+    fila = query(
+        """SELECT a.nombre_guardado, a.categoria, a.tipo, a.asunto, u.username
+           FROM archivos a LEFT JOIN usuarios u ON u.id = a.usuario_id
+           WHERE a.id=%s AND a.estado='aprobado' AND a.oculto=FALSE""",
+        (archivo_id,), fetchone=True)
+    if not fila:
+        abort(404)
+    autor = "" if fila["categoria"] == "Modo Incognito" else (fila["username"] or "")
+    # El video no se puede re-codificar aquí (sin ffmpeg): el cliente arma la portada.
+    if fila["tipo"] == "video":
+        return jsonify({"cliente": True, "tipo": "video"})
+    if not _PIL_OK:
+        return jsonify({"cliente": True, "tipo": fila["tipo"]})
+    from flask import Response
+    key = f"aprobados/{fila['categoria']}/{fila['nombre_guardado']}"
+    data = st_leer(key)
+    if not data:
+        abort(404)
+    ext = fila["nombre_guardado"].rsplit(".", 1)[-1].lower() if "." in fila["nombre_guardado"] else ""
+    try:
+        if ext == "gif":
+            return Response(historia_gif(data, autor), mimetype="image/gif")
+        if fila["tipo"] == "imagen":
+            return Response(historia_imagen(data, autor, fila["asunto"]), mimetype="image/jpeg")
+    except Exception as e:
+        print("aviso: no se pudo generar la historia:", e)
+    return jsonify({"cliente": True, "tipo": fila["tipo"]})
 
 # ── Categorías (público: listar) ──────────────────────────
 @app.route("/api/categorias")

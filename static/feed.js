@@ -159,92 +159,143 @@ function renderPost(a) {
   card.querySelector('.feed-coment-btn').addEventListener('click', () => toggleComentarios(card, a));
 }
 
-/* ── Compartir con marca de agua estilo historia (Instagram/Tumblr/Reddit) ── */
+/* ── Compartir como historia (Instagram/Tumblr/Reddit) con marca de agua ──
+   Imagen y GIF: el servidor genera la historia (GIF conserva animación).
+   Video: sin ffmpeg, el navegador arma una portada 9:16 con un fotograma. */
 async function compartirPost(a, link) {
   const url = window.location.origin + link;
-  // Para imágenes: generar una versión con marca de agua y compartirla/descargarla.
-  if (a.tipo === 'imagen') {
-    showToast('Preparando imagen con marca de agua...');
-    try {
-      const blob = await generarImagenMarca(a);
-      const file = new File([blob], `darkfiles-${a.id}.png`, { type: 'image/png' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: a.asunto || 'DARK FILES', text: `${a.asunto || ''}\n${url}` });
-        return;
+  showToast('Preparando historia con marca de agua...');
+  try {
+    if (a.tipo === 'video') {
+      const blob = await portadaVideoHistoria(a);
+      if (blob) return compartirBlob(blob, `darkfiles-${a.id}.png`, a, url);
+    } else {
+      const resp = await fetch(`/api/historia/${a.id}`);
+      const ct = resp.headers.get('content-type') || '';
+      if (ct.startsWith('image/')) {
+        const blob = await resp.blob();
+        const ext = ct.includes('gif') ? 'gif' : 'jpg';
+        return compartirBlob(blob, `darkfiles-${a.id}.${ext}`, a, url);
       }
-      // Fallback: descargar la imagen con la marca lista para compartir.
-      const dl = URL.createObjectURL(blob);
-      const link_ = document.createElement('a');
-      link_.href = dl; link_.download = `darkfiles-${a.id}.png`;
-      document.body.appendChild(link_); link_.click(); link_.remove();
-      setTimeout(() => URL.revokeObjectURL(dl), 4000);
-      showToast('Imagen con marca de agua descargada para compartir.');
-      return;
-    } catch (e) {
-      // Si algo falla, compartir el enlace normal.
     }
-  }
-  // Video/audio/otros o error: compartir el enlace.
+  } catch (e) { /* cae al enlace */ }
+  // Fallback: compartir el enlace.
   if (navigator.share) navigator.share({ title: a.asunto || 'DARK FILES', url }).catch(() => {});
   else { navigator.clipboard.writeText(url); showToast('Enlace copiado al portapapeles.'); }
 }
 
-function generarImagenMarca(a) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const W = img.naturalWidth || 1080;
-      const H = img.naturalHeight || 1080;
-      const barH = Math.max(46, Math.round(H * 0.075));
-      const pad = Math.round(barH * 0.42);
-      const canvas = document.createElement('canvas');
-      canvas.width = W; canvas.height = H + barH;
-      const ctx = canvas.getContext('2d');
-      // Fondo + imagen
-      ctx.fillStyle = '#0a0a0a';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, W, H);
+async function compartirBlob(blob, filename, a, url) {
+  const file = new File([blob], filename, { type: blob.type });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: a.asunto || 'DARK FILES', text: `${a.asunto || ''}\n${url}`.trim() });
+      return true;
+    } catch { /* usuario canceló o no soportado → descargar */ }
+  }
+  const dl = URL.createObjectURL(blob);
+  const el = document.createElement('a');
+  el.href = dl; el.download = filename;
+  document.body.appendChild(el); el.click(); el.remove();
+  setTimeout(() => URL.revokeObjectURL(dl), 4000);
+  showToast('Historia con marca de agua descargada para compartir.');
+  return true;
+}
 
-      // Marca de agua en esquina superior (sobre la imagen)
-      const wmFs = Math.max(16, Math.round(W * 0.028));
-      ctx.font = `800 ${wmFs}px system-ui, -apple-system, sans-serif`;
-      ctx.textBaseline = 'top';
-      ctx.textAlign = 'left';
-      ctx.save();
-      ctx.globalAlpha = 0.85;
-      ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 8;
-      ctx.fillStyle = '#fff';
-      ctx.fillText('DARK', pad, pad);
-      const dW = ctx.measureText('DARK ').width;
-      ctx.fillStyle = '#e11d2a';
-      ctx.fillText(' FILES', pad + dW - ctx.measureText(' ').width, pad);
-      ctx.restore();
-
-      // Barra inferior con marca + autor
-      ctx.fillStyle = '#111214';
-      ctx.fillRect(0, H, W, barH);
-      const fs = Math.round(barH * 0.4);
-      ctx.textBaseline = 'middle';
-      ctx.textAlign = 'left';
-      ctx.font = `800 ${fs}px system-ui, -apple-system, sans-serif`;
-      ctx.fillStyle = '#fff';
-      ctx.fillText('DARK', pad, H + barH / 2);
-      const bW = ctx.measureText('DARK ').width;
-      ctx.fillStyle = '#e11d2a';
-      ctx.fillText(' FILES', pad + bW - ctx.measureText(' ').width, H + barH / 2);
-      // Autor / sitio a la derecha
-      ctx.textAlign = 'right';
-      ctx.font = `500 ${Math.round(fs * 0.78)}px system-ui, -apple-system, sans-serif`;
-      ctx.fillStyle = 'rgba(255,255,255,.7)';
-      const handle = a.subido_por ? '@' + a.subido_por : window.location.host;
-      ctx.fillText(handle, W - pad, H + barH / 2);
-
-      canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob null')), 'image/png');
-    };
-    img.onerror = reject;
-    img.src = a.url;
+/* Portada 9:16 de un video (fotograma + ▶ + marca), generada en el navegador. */
+function portadaVideoHistoria(a) {
+  return new Promise(resolve => {
+    const W = 1080, H = 1920;
+    const v = document.createElement('video');
+    v.crossOrigin = 'anonymous'; v.muted = true; v.playsInline = true; v.preload = 'metadata';
+    const fin = b => resolve(b);
+    const fallo = () => resolve(null);
+    let listo = false;
+    v.addEventListener('loadeddata', () => {
+      try { v.currentTime = Math.min(1.0, (v.duration || 2) / 2); } catch { fallo(); }
+    });
+    v.addEventListener('seeked', () => {
+      if (listo) return; listo = true;
+      try {
+        const c = document.createElement('canvas'); c.width = W; c.height = H;
+        const ctx = c.getContext('2d');
+        const vw = v.videoWidth || 16, vh = v.videoHeight || 9;
+        // Fondo: fotograma que cubre, desenfocado y oscurecido
+        ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, W, H);
+        ctx.save();
+        ctx.filter = 'blur(30px) brightness(.5)';
+        const cover = Math.max(W / vw, H / vh);
+        const cw = vw * cover, ch = vh * cover;
+        ctx.drawImage(v, (W - cw) / 2, (H - ch) / 2, cw, ch);
+        ctx.restore();
+        // Fotograma centrado
+        const fit = Math.min((W - 120) / vw, (H - 560) / vh);
+        const fw = vw * fit, fh = vh * fit;
+        const fx = (W - fw) / 2, fy = (H - fh) / 2;
+        ctx.drawImage(v, fx, fy, fw, fh);
+        // Botón play
+        dibujarPlay(ctx, W / 2, H / 2, 70);
+        // Marca de agua tipo historia
+        dibujarMarcaHistoria(ctx, W, H, a.subido_por, a.asunto);
+        c.toBlob(b => fin(b), 'image/png');
+      } catch { fallo(); }
+    });
+    v.addEventListener('error', fallo);
+    setTimeout(fallo, 9000);
+    v.src = a.url;
   });
+}
+
+function dibujarPlay(ctx, cx, cy, r) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  const s = r * 0.5;
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 0.5, cy - s);
+  ctx.lineTo(cx - s * 0.5, cy + s);
+  ctx.lineTo(cx + s, cy);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function dibujarMarcaHistoria(ctx, W, H, autor, asunto) {
+  const wordmark = (x, y, size, align) => {
+    ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+    ctx.font = `800 ${size}px system-ui, -apple-system, sans-serif`;
+    const wDark = ctx.measureText('DARK ').width;
+    const wFiles = ctx.measureText('FILES').width;
+    let x0 = x;
+    if (align === 'center') x0 = x - (wDark + wFiles) / 2;
+    ctx.fillStyle = '#fff'; ctx.fillText('DARK ', x0, y);
+    ctx.fillStyle = '#e11d2a'; ctx.fillText('FILES', x0 + wDark, y);
+    return wDark + wFiles;
+  };
+  // Logo arriba-izquierda (con sombra)
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 10;
+  wordmark(46, 92, 52);
+  ctx.restore();
+  // Asunto centrado sobre el pie
+  if (asunto) {
+    ctx.font = `600 46px system-ui, -apple-system, sans-serif`;
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+    const txt = asunto.length <= 42 ? asunto : asunto.slice(0, 41) + '…';
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 8;
+    ctx.fillText(txt, W / 2, H - 170); ctx.restore();
+  }
+  // Pie centrado: DARK FILES · @autor
+  const handle = autor ? ' · @' + autor : '';
+  ctx.font = `800 40px system-ui, -apple-system, sans-serif`;
+  const wMarca = ctx.measureText('DARK FILES').width;
+  ctx.font = `600 40px system-ui, -apple-system, sans-serif`;
+  const wHandle = ctx.measureText(handle).width;
+  const x0 = (W - (wMarca + wHandle)) / 2;
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 8;
+  const anchoMarca = wordmark(x0, H - 70, 40);
+  ctx.textAlign = 'left'; ctx.font = `600 40px system-ui, -apple-system, sans-serif`;
+  ctx.fillStyle = '#ededed'; ctx.fillText(handle, x0 + anchoMarca, H - 70);
+  ctx.restore();
 }
 
 /* ── Comentarios inline ── */
