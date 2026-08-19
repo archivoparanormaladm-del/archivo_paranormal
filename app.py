@@ -152,11 +152,101 @@ def listar_prefijo(prefix):
         return []
     return [f"{prefix}/{f}" for f in os.listdir(base)]
 
+def _content_type_por_ext(key):
+    e = key.rsplit(".", 1)[-1].lower() if "." in key else ""
+    return {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+            "webp": "image/webp", "gif": "image/gif"}.get(e, "application/octet-stream")
+
+def st_guardar_bytes(data, key, content_type=None):
+    """Guarda `data` (bytes) bajo la key dada."""
+    content_type = content_type or _content_type_por_ext(key)
+    if USAR_S3:
+        _s3_client().put_object(Bucket=S3_BUCKET, Key=key, Body=data, ContentType=content_type)
+    else:
+        ruta = _ruta_local(key)
+        os.makedirs(os.path.dirname(ruta), exist_ok=True)
+        with open(ruta, "wb") as f:
+            f.write(data)
+
+def st_leer(key):
+    """Devuelve los bytes de la key, o None si no existe."""
+    if USAR_S3:
+        try:
+            obj = _s3_client().get_object(Bucket=S3_BUCKET, Key=key)
+            return obj["Body"].read()
+        except Exception:
+            return None
+    ruta = _ruta_local(key)
+    if not os.path.exists(ruta):
+        return None
+    with open(ruta, "rb") as f:
+        return f.read()
+
+def st_existe(key):
+    if USAR_S3:
+        try:
+            _s3_client().head_object(Bucket=S3_BUCKET, Key=key)
+            return True
+        except Exception:
+            return False
+    return os.path.exists(_ruta_local(key))
+
 def key_de_archivo(fila):
     """Devuelve la key de storage de una fila de `archivos` según su estado."""
     if fila["estado"] == "aprobado":
         return f"aprobados/{fila['categoria']}/{fila['nombre_guardado']}"
     return f"aduana/{fila['nombre_guardado']}"
+
+# ── Optimización de imágenes (Pillow) ─────────────────────
+try:
+    from PIL import Image, ImageOps
+    _PIL_OK = True
+except Exception:
+    _PIL_OK = False
+
+MAX_LADO   = 2000   # px del lado mayor de la imagen principal
+THUMB_LADO = 600    # px del lado mayor de la miniatura
+EXT_OPTIMIZABLE = {"jpg", "jpeg", "png", "webp"}   # gif (animado) y svg (vector) se dejan tal cual
+
+def _pil_a_bytes(img, ext):
+    import io
+    buf = io.BytesIO()
+    e = ext.lower()
+    if e in ("jpg", "jpeg"):
+        img.convert("RGB").save(buf, format="JPEG", quality=82, optimize=True, progressive=True)
+    elif e == "png":
+        img.save(buf, format="PNG", optimize=True)
+    elif e == "webp":
+        img.save(buf, format="WEBP", quality=82, method=6)
+    else:
+        return None
+    return buf.getvalue()
+
+def optimizar_imagen(file_storage, ext):
+    """Corrige orientación, reduce a MAX_LADO y recomprime. Devuelve bytes o None."""
+    if not _PIL_OK or ext.lower() not in EXT_OPTIMIZABLE:
+        return None
+    try:
+        file_storage.stream.seek(0)
+        img = ImageOps.exif_transpose(Image.open(file_storage.stream))
+        if max(img.size) > MAX_LADO:
+            img.thumbnail((MAX_LADO, MAX_LADO), Image.LANCZOS)
+        return _pil_a_bytes(img, ext)
+    except Exception as e:
+        print("aviso: no se pudo optimizar imagen:", e)
+        return None
+
+def miniatura_bytes(data, ext):
+    """Genera una miniatura (lado mayor THUMB_LADO) a partir de bytes."""
+    if not _PIL_OK:
+        return None
+    try:
+        import io
+        img = ImageOps.exif_transpose(Image.open(io.BytesIO(data)))
+        img.thumbnail((THUMB_LADO, THUMB_LADO), Image.LANCZOS)
+        return _pil_a_bytes(img, ext if ext.lower() in EXT_OPTIMIZABLE else "jpg")
+    except Exception:
+        return None
 
 def enviar_email(destino, asunto, cuerpo):
     """Envía un correo por SMTP si está configurado. Si no, lo registra en el
@@ -637,7 +727,12 @@ def upload():
     if tipo == "auto":
         tipo = tipo_por_extension(nombre_original)
 
-    st_guardar(archivo, f"aduana/{nombre_guardado}")
+    # Optimizar imágenes al subir (corrige orientación, reduce tamaño y comprime).
+    optimizada = optimizar_imagen(archivo, ext) if tipo == "imagen" else None
+    if optimizada is not None:
+        st_guardar_bytes(optimizada, f"aduana/{nombre_guardado}", archivo.mimetype)
+    else:
+        st_guardar(archivo, f"aduana/{nombre_guardado}")
 
     query(
         """INSERT INTO archivos
@@ -741,6 +836,30 @@ def servir_archivo(nombre_guardado):
     if not fila:
         abort(404)
     return servir_archivo_st(f"aprobados/{fila['categoria']}/{nombre_guardado}")
+
+# ── Miniatura de un archivo aprobado (se genera y cachea al vuelo) ──
+@app.route("/api/thumb/<nombre_guardado>")
+def servir_thumb(nombre_guardado):
+    fila = query(
+        "SELECT categoria, tipo FROM archivos WHERE nombre_guardado=%s AND estado='aprobado'",
+        (nombre_guardado,), fetchone=True,
+    )
+    if not fila:
+        abort(404)
+    original = f"aprobados/{fila['categoria']}/{nombre_guardado}"
+    ext = nombre_guardado.rsplit(".", 1)[-1].lower() if "." in nombre_guardado else ""
+    # Solo imágenes en formatos rasterizables tienen miniatura; el resto
+    # (video, audio, gif animado, svg…) cae al archivo original.
+    if fila["tipo"] != "imagen" or not _PIL_OK or ext not in EXT_OPTIMIZABLE:
+        return servir_archivo_st(original)
+    thumb_key = f"thumbs/{nombre_guardado}"
+    if not st_existe(thumb_key):
+        data = st_leer(original)
+        mini = miniatura_bytes(data, ext) if data else None
+        if not mini:
+            return servir_archivo_st(original)   # fallback: original
+        st_guardar_bytes(mini, thumb_key)
+    return servir_archivo_st(thumb_key)
 
 # ── Categorías (público: listar) ──────────────────────────
 @app.route("/api/categorias")
@@ -1292,6 +1411,7 @@ def eliminar_mi_publicacion(archivo_id):
     if fila["usuario_id"] != session["user_id"]:
         return jsonify({"error": "No es tu publicación"}), 403
     borrar_archivo(key_de_archivo(fila))
+    borrar_archivo(f"thumbs/{fila['nombre_guardado']}")
     query("DELETE FROM archivos WHERE id=%s", (archivo_id,), commit=True)
     return jsonify({"ok": True})
 
@@ -1484,6 +1604,7 @@ def eliminar_archivo_admin(archivo_id):
     if not fila:
         return jsonify({"error": "No encontrado"}), 404
     borrar_archivo(key_de_archivo(fila))
+    borrar_archivo(f"thumbs/{fila['nombre_guardado']}")
     query("DELETE FROM archivos WHERE id=%s", (archivo_id,), commit=True)
     return jsonify({"ok": True})
 

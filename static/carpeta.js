@@ -230,7 +230,7 @@ async function enviarComentario(archivoId) {
 
 /* ── Miniatura de previsualización ──────────────────────── */
 function miniatura(a) {
-  if (a.tipo === 'imagen') return `<img src="${a.url}" alt="" loading="lazy">`;
+  if (a.tipo === 'imagen') return `<img src="${a.url.replace('/api/archivo/', '/api/thumb/')}" alt="" loading="lazy">`;
   if (a.tipo === 'video')  return `<video src="${a.url}#t=0.1" muted preload="metadata"></video><span class="thumb-play"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>`;
   if (a.tipo === 'audio')  return `<span class="thumb-ph"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>`;
   return `<span class="thumb-ph"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>`;

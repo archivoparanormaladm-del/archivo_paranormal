@@ -336,7 +336,7 @@ function editarPublicacion(a) {
 
 /* ── Guardados (solo mi perfil) ── */
 function thumbHtml(a) {
-  if (a.tipo === 'imagen') return `<img src="${a.url}" loading="lazy">`;
+  if (a.tipo === 'imagen') return `<img src="${a.url.replace('/api/archivo/', '/api/thumb/')}" loading="lazy">`;
   if (a.tipo === 'video')  return `<video src="${a.url}#t=0.5" preload="metadata" muted></video>`;
   if (a.tipo === 'audio')  return `<div class="audio-ph"></div>`;
   return `<div class="otro-ph">📄</div>`;
