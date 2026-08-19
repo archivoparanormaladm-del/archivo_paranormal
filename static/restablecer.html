@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restablecer contraseña — Archivo Paranormal</title>
+<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="login.css">
+</head>
+<body>
+
+<div class="login-logo">
+  <img src="/logo.png" alt="Archivo Paranormal">
+</div>
+
+<div class="login-wrap">
+  <p class="title">Nueva contraseña</p>
+  <form id="reset-form">
+    <label>Nueva contraseña</label>
+    <input type="password" id="password" required minlength="8" autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+    <label>Repetir contraseña</label>
+    <input type="password" id="password2" required minlength="8" autocomplete="new-password" placeholder="Repite la contraseña">
+    <div id="error-msg" class="error-msg hidden"></div>
+    <div id="ok-msg" class="hidden" style="color:#4ade80;font-size:13px;margin:8px 0;text-align:center"></div>
+    <button type="submit" class="btn-ingresar">Guardar contraseña</button>
+  </form>
+  <p class="link-register"><a href="/index.html">← Volver a iniciar sesión</a></p>
+</div>
+
+<div class="vhs-overlay"></div>
+<script src="temas.js"></script>
+<script>
+const TOKEN = new URLSearchParams(location.search).get('token') || '';
+if (!TOKEN) {
+  document.getElementById('error-msg').textContent = 'Enlace inválido. Solicita uno nuevo desde "¿Olvidaste tu contraseña?".';
+  document.getElementById('error-msg').classList.remove('hidden');
+  document.getElementById('reset-form').classList.add('hidden');
+}
+document.getElementById('reset-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const errEl = document.getElementById('error-msg');
+  const okEl  = document.getElementById('ok-msg');
+  errEl.classList.add('hidden'); okEl.classList.add('hidden');
+  const p1 = document.getElementById('password').value;
+  const p2 = document.getElementById('password2').value;
+  if (p1 !== p2) { errEl.textContent = 'Las contraseñas no coinciden.'; errEl.classList.remove('hidden'); return; }
+  const btn = e.target.querySelector('button');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const res  = await fetch('/api/auth/reset', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ token: TOKEN, password: p1 })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      okEl.textContent = data.mensaje + ' Redirigiendo...';
+      okEl.classList.remove('hidden');
+      e.target.classList.add('hidden');
+      setTimeout(() => window.location.href = '/index.html', 2000);
+    } else { errEl.textContent = data.error || 'No se pudo cambiar.'; errEl.classList.remove('hidden'); }
+  } catch {
+    errEl.textContent = 'Error de conexión.'; errEl.classList.remove('hidden');
+  } finally { btn.disabled = false; btn.textContent = 'Guardar contraseña'; }
+});
+</script>
+</body>
+</html>

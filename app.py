@@ -5,6 +5,10 @@ ARCHIVO PARANORMAL — Backend Flask + PostgreSQL
 import os
 import uuid
 import re
+import secrets
+import smtplib
+from email.message import EmailMessage
+from datetime import datetime, timedelta
 from functools import wraps
 
 import psycopg2
@@ -145,6 +149,32 @@ def key_de_archivo(fila):
     if fila["estado"] == "aprobado":
         return f"aprobados/{fila['categoria']}/{fila['nombre_guardado']}"
     return f"aduana/{fila['nombre_guardado']}"
+
+def enviar_email(destino, asunto, cuerpo):
+    """Envía un correo por SMTP si está configurado. Si no, lo registra en el
+    log del servidor (útil en local / mientras no configures SMTP)."""
+    host = os.getenv("SMTP_HOST")
+    remitente = os.getenv("SMTP_FROM") or os.getenv("SMTP_USER") or "no-reply@darkfiles.app"
+    if not host:
+        print(f"\n[EMAIL SIN SMTP] Para: {destino}\nAsunto: {asunto}\n{cuerpo}\n")
+        return False
+    try:
+        msg = EmailMessage()
+        msg["Subject"] = asunto
+        msg["From"] = remitente
+        msg["To"] = destino
+        msg.set_content(cuerpo)
+        puerto = int(os.getenv("SMTP_PORT", 587))
+        with smtplib.SMTP(host, puerto, timeout=15) as s:
+            s.starttls()
+            usuario, clave = os.getenv("SMTP_USER"), os.getenv("SMTP_PASS")
+            if usuario and clave:
+                s.login(usuario, clave)
+            s.send_message(msg)
+        return True
+    except Exception as e:
+        print("aviso: no se pudo enviar email:", e)
+        return False
 
 def crear_notificacion(usuario_id, actor_id, tipo, archivo_id=None):
     """Crea una notificación para `usuario_id`. No notifica acciones propias."""
@@ -468,6 +498,47 @@ def login():
 def logout():
     session.clear()
     return jsonify({"ok": True})
+
+
+# ── Recuperación de contraseña ────────────────────────────
+@app.route("/api/auth/recuperar", methods=["POST"])
+def recuperar_password():
+    email = (request.get_json() or {}).get("email", "").strip().lower()
+    # Respuesta genérica siempre (no revelar si el correo existe).
+    generico = {"ok": True, "mensaje": "Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña."}
+    if not email:
+        return jsonify(generico)
+    user = query("SELECT id, nombre FROM usuarios WHERE email=%s", (email,), fetchone=True)
+    if not user:
+        return jsonify(generico)
+    token  = secrets.token_urlsafe(32)
+    expira = datetime.utcnow() + timedelta(hours=1)
+    query("INSERT INTO password_resets (token, usuario_id, expira) VALUES (%s,%s,%s)",
+          (token, user["id"], expira), commit=True)
+    base = (os.getenv("APP_URL") or request.url_root).rstrip("/")
+    enlace = f"{base}/restablecer.html?token={token}"
+    enviar_email(
+        email, "Restablecer tu contraseña — DARK FILES",
+        f"Hola {user['nombre']},\n\n"
+        f"Recibimos una solicitud para restablecer tu contraseña. "
+        f"Abre este enlace (válido por 1 hora):\n\n{enlace}\n\n"
+        f"Si no fuiste tú, ignora este correo; tu contraseña no cambiará.")
+    return jsonify(generico)
+
+@app.route("/api/auth/reset", methods=["POST"])
+def reset_password():
+    data     = request.get_json() or {}
+    token    = (data.get("token") or "").strip()
+    password = data.get("password") or ""
+    if len(password) < 8:
+        return jsonify({"error": "La contraseña debe tener al menos 8 caracteres"}), 400
+    fila = query("SELECT * FROM password_resets WHERE token=%s", (token,), fetchone=True)
+    if not fila or fila["usado"] or fila["expira"] < datetime.utcnow():
+        return jsonify({"error": "El enlace es inválido o ha expirado. Solicita uno nuevo."}), 400
+    query("UPDATE usuarios SET password=%s WHERE id=%s",
+          (generate_password_hash(password), fila["usuario_id"]), commit=True)
+    query("UPDATE password_resets SET usado=TRUE WHERE token=%s", (token,), commit=True)
+    return jsonify({"ok": True, "mensaje": "Contraseña actualizada. Ya puedes iniciar sesión."})
 
 
 @app.route("/api/auth/me")
