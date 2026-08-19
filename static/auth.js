@@ -1,5 +1,27 @@
 /* auth.js */
 
+// ── CSRF: añade la cabecera X-CSRF-Token a las peticiones que modifican
+//    datos (POST/PUT/PATCH/DELETE) del mismo origen, leyendo la cookie
+//    csrf_token que fija el servidor. ─────────────────────────────────
+(function () {
+  const _fetch = window.fetch.bind(window);
+  const leerCookie = n => document.cookie.split('; ').find(c => c.startsWith(n + '='))?.split('=')[1];
+  window.fetch = function (url, opts = {}) {
+    const metodo = (opts.method || 'GET').toUpperCase();
+    const modifica = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(metodo);
+    const mismoOrigen = typeof url === 'string' && (url.startsWith('/') || url.startsWith(location.origin));
+    if (modifica && mismoOrigen) {
+      const token = leerCookie('csrf_token');
+      if (token) {
+        const h = new Headers(opts.headers || {});
+        if (!h.has('X-CSRF-Token')) h.set('X-CSRF-Token', token);
+        opts.headers = h;
+      }
+    }
+    return _fetch(url, opts);
+  };
+})();
+
 // ── Toast ─────────────────────────────────────────────────
 function showToast(msg, type = 'success') {
   let container = document.querySelector('.toast-container');

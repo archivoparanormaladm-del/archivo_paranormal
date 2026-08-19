@@ -27,6 +27,14 @@ app = Flask(__name__, static_folder="static")
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key-cambiar")
 app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("MAX_CONTENT_MB", 50)) * 1024 * 1024
 
+# Endurecer la cookie de sesión. En producción (FLASK_DEBUG=0) exige HTTPS.
+_EN_PROD = os.getenv("FLASK_DEBUG", "1") != "1"
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=_EN_PROD,
+)
+
 BASE_DIR    = os.path.dirname(__file__)
 # En Railway se monta un Volume persistente y se apunta UPLOADS_DIR ahí
 # (p. ej. /data). En local cae por defecto a ./uploads.
@@ -402,6 +410,34 @@ def permiso_required(accion):
             return f(*args, **kwargs)
         return decorated
     return wrapper
+
+# ── Protección CSRF (sincronizador por sesión) ────────────
+# Endpoints exentos: previos a tener sesión/token o de sólo lectura por diseño.
+CSRF_EXENTOS = {
+    "/api/auth/login", "/api/auth/register",
+    "/api/auth/recuperar", "/api/auth/reset",
+}
+
+@app.before_request
+def csrf_protect():
+    # Cada visitante tiene un token de sesión (se usa para validar formularios).
+    if not session.get("csrf"):
+        session["csrf"] = secrets.token_urlsafe(32)
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        if request.path in CSRF_EXENTOS:
+            return
+        enviado = request.headers.get("X-CSRF-Token", "")
+        if not enviado or enviado != session.get("csrf"):
+            return jsonify({"error": "Token de seguridad inválido o expirado. Recarga la página."}), 403
+
+@app.after_request
+def set_csrf_cookie(resp):
+    token = session.get("csrf")
+    if token:
+        # Cookie legible por JS (el frontend la reenvía en la cabecera X-CSRF-Token).
+        resp.set_cookie("csrf_token", token, samesite="Lax",
+                        secure=_EN_PROD, httponly=False)
+    return resp
 
 # ── Páginas estáticas ──────────────────────────────────────
 def get_client_ip():
