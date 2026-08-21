@@ -6,31 +6,84 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Administración — Archivo Paranormal</title>
-<link rel="stylesheet" href="shared.css">
-<link rel="stylesheet" href="admin.css">
+<script>
+/* Modo y tema aplicados antes del primer pintado: evita el destello oscuro
+   al navegar en modo claro. Debe ir ANTES de las hojas de estilo. */
+(function(){try{
+  var d=document.documentElement;
+  d.setAttribute('data-modo', localStorage.getItem('modo')||'claro');
+  var T={rojo:['#e63535','#c02020','#8a0f0f','#1c0808','rgba(230,53,53,.35)'],
+    verde:['#22c55e','#16a34a','#14532d','#052e16','rgba(34,197,94,.35)'],
+    azul:['#3b82f6','#2563eb','#1e3a8a','#0d1f4a','rgba(59,130,246,.35)'],
+    morado:['#a855f7','#9333ea','#581c87','#2e0f4a','rgba(168,85,247,.35)'],
+    naranja:['#f97316','#ea580c','#7c2d12','#3d1505','rgba(249,115,22,.35)'],
+    cyan:['#06b6d4','#0891b2','#164e63','#042f3e','rgba(6,182,212,.35)'],
+    rosa:['#ec4899','#db2777','#831843','#3d0a24','rgba(236,72,153,.35)'],
+    amarillo:['#eab308','#ca8a04','#713f12','#2d1a03','rgba(234,179,8,.35)']};
+  var t=T[localStorage.getItem('tema')];
+  if(t){var k=['--red','--red-2','--red-dark','--red-bg','--red-glow'];
+    for(var i=0;i<5;i++) d.style.setProperty(k[i],t[i]);}
+}catch(e){}})();
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="shared.css?v=20260822q">
+<link rel="stylesheet" href="admin.css?v=20260822q">
 </head>
 <body>
 
 <nav class="navbar">
   <a class="navbar-logo" onclick="irCarpetas()">
-    <img src="/logo.png" alt="Archivo Paranormal">
+    <img src="/logoblack-nav.png" alt="Archivo Paranormal">
   </a>
   <div class="navbar-nav" id="navbar-nav"></div>
   <div class="navbar-session" id="session-bar"></div>
 </nav>
 </div>
 
-<!-- Tabs -->
-<div class="tabs">
-  <button class="tab active" data-tab="pendientes">Archivos Pendientes</button>
-  <button class="tab" data-tab="usuarios">Gestión de Usuarios</button>
-  <button class="tab" data-tab="publicados">Archivos Publicados</button>
-  <button class="tab" data-tab="categorias">Categorías</button>
-  <button class="tab" data-tab="soporte">Soporte</button>
-  <button class="tab" data-tab="estadisticas">Estadísticas</button>
-  <button class="tab" data-tab="reportes">Reportes</button>
-  <button class="tab hidden" data-tab="permisos" id="tab-btn-permisos">Permisos</button>
-</div>
+<div class="admin-layout">
+  <aside class="admin-sidebar" id="admin-sidebar">
+    <p class="side-grupo">Moderación</p>
+      <button class="tab active " data-tab="pendientes" style="--tono:-30deg">
+        <span class="tab-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></span>
+        <span class="tab-txt">Archivos Pendientes</span>
+      </button>
+      <button class="tab " data-tab="reportes" style="--tono:7deg">
+        <span class="tab-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg></span>
+        <span class="tab-txt">Reportes</span>
+      </button>
+      <button class="tab " data-tab="soporte" style="--tono:-17deg">
+        <span class="tab-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg></span>
+        <span class="tab-txt">Soporte</span>
+      </button>
+    <p class="side-grupo">Contenido</p>
+      <button class="tab " data-tab="publicados" style="--tono:20deg">
+        <span class="tab-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m6.08 9.5-3.5 1.6a1 1 0 0 0 0 1.81l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9a1 1 0 0 0 0-1.83l-3.5-1.59"/><path d="m6.08 14.5-3.5 1.6a1 1 0 0 0 0 1.81l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9a1 1 0 0 0 0-1.83l-3.5-1.59"/></svg></span>
+        <span class="tab-txt">Archivos Publicados</span>
+      </button>
+      <button class="tab " data-tab="categorias" style="--tono:-4deg">
+        <span class="tab-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.2 7.1a2.1 2.1 0 0 1 2.1-2.1h3.9l2.1 2.1h7.4a2.1 2.1 0 0 1 2.1 2.1v8.6a2.1 2.1 0 0 1-2.1 2.1H5.3a2.1 2.1 0 0 1-2.1-2.1Z"/></svg></span>
+        <span class="tab-txt">Categorías</span>
+      </button>
+    <p class="side-grupo">Sistema</p>
+      <button class="tab " data-tab="usuarios" style="--tono:-28deg">
+        <span class="tab-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <span class="tab-txt">Gestión de Usuarios</span>
+      </button>
+      <button class="tab " data-tab="pesos" style="--tono:-22deg">
+        <span class="tab-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18"/><path d="M5 8h14l2 5a5 5 0 0 1-9.9 0L13 8"/><path d="M11 8 7 13a5 5 0 0 1-4.9-.6"/><path d="M8 21h8"/></svg></span>
+        <span class="tab-txt">Almacenamiento</span>
+      </button>
+      <button class="tab " data-tab="donaciones" style="--tono:14deg">
+        <span class="tab-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg></span>
+        <span class="tab-txt">Donaciones</span>
+      </button>
+      <button class="tab " data-tab="estadisticas" style="--tono:9deg">
+        <span class="tab-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg></span>
+        <span class="tab-txt">Estadísticas</span>
+      </button>
+  </aside>
+
+  <div class="admin-panel">
 
 <!-- ══════════ TAB: ARCHIVOS PENDIENTES ══════════ -->
 <section id="tab-pendientes" class="tab-content">
@@ -53,6 +106,7 @@
     <input type="text" id="nueva-cat" maxlength="100" placeholder="Nombre de la nueva categoría (ej. Criptozoología)">
     <button class="btn-accion btn-verde" id="btn-crear-cat">+ Crear categoría</button>
   </div>
+  <div class="ico-picker" id="ico-picker-nueva"></div>
   <p id="cat-error" class="error-msg hidden"></p>
   <div id="lista-categorias"></div>
 </section>
@@ -63,26 +117,76 @@
   <div id="lista-soporte"></div>
 </section>
 
-<!-- ══════════ TAB: PERMISOS (solo Super Admin) ══════════ -->
-<section id="tab-permisos" class="tab-content hidden">
-  <h2 class="section-title">Permisos del perfil Administrador</h2>
-  <p class="perm-hint">Como Super Administrador puedes delegar o revocar estas capacidades al perfil Administrador. El Super Administrador siempre las tiene.</p>
-  <div id="lista-permisos"></div>
+<!-- ══════════ TAB: PESO DE ARCHIVOS ══════════ -->
+<section id="tab-pesos" class="tab-content hidden">
+  <h2 class="section-title">Almacenamiento</h2>
+  <div id="uso-almacenamiento"><p class="cargando">Cargando...</p></div>
 
-  <h2 class="section-title" style="margin-top:32px">Peso máximo de subida</h2>
-  <div class="peso-form">
-    <input type="number" id="peso-max" min="1" max="2000">
-    <span class="peso-unidad">MB</span>
-    <button class="btn-accion btn-verde" id="btn-guardar-peso">Guardar</button>
+  <h3 class="section-title" style="margin-top:28px">Peso máximo por tipo de archivo</h3>
+  <p class="perm-hint">
+    Tope de subida para cada tipo. Los valores de partida son los que ya regían.
+    El <strong>tope de la petición</strong> se recalcula solo a partir de estos valores:
+    Flask lo aplica al envío completo, y una galería o una lista de audio viajan
+    en una sola petición.
+  </p>
+
+  <div id="lista-pesos" class="pesos-grid">
+    <p class="cargando">Cargando...</p>
   </div>
-  <p id="peso-msg" class="perm-hint"></p>
+
+  <div class="pesos-pie">
+    <span class="pesos-global">
+      Tope de la petición: <strong id="peso-global">—</strong> MB
+      <em id="pesos-nota"></em>
+    </span>
+    <button class="btn-accion btn-verde" id="btn-guardar-pesos">Guardar pesos</button>
+  </div>
+  <p id="pesos-msg" class="perm-hint"></p>
+</section>
+
+<!-- ══════════ TAB: DONACIONES ══════════ -->
+<section id="tab-donaciones" class="tab-content hidden">
+  <h2 class="section-title">Botón de donaciones</h2>
+  <p class="perm-hint">
+    Pega aquí tu enlace de PayPal. La aplicación sólo abre ese enlace en una pestaña
+    nueva: no procesa pagos ni guarda datos de tu cuenta. Sólo se admiten enlaces
+    <strong>https</strong> de <strong>paypal.me</strong> o <strong>paypal.com</strong>.
+  </p>
+
+  <div class="don-form">
+    <label for="don-url">Enlace de PayPal</label>
+    <input type="url" id="don-url" maxlength="300" placeholder="https://paypal.me/tuusuario">
+    <p class="don-ayuda">
+      Lo consigues en <strong>paypal.me</strong> (crea tu enlace personal) o con un
+      botón de donación en PayPal → Herramientas → Botones de PayPal.
+    </p>
+
+    <label for="don-texto">Texto del botón</label>
+    <input type="text" id="don-texto" maxlength="40" placeholder="Donar">
+
+    <label class="don-check">
+      <input type="checkbox" id="don-activo">
+      <span>Mostrar el botón en la barra superior</span>
+    </label>
+
+    <div class="don-acciones">
+      <button class="btn-accion btn-verde" id="btn-guardar-don">Guardar</button>
+      <a class="btn-accion" id="don-probar" target="_blank" rel="noopener noreferrer">Probar enlace ↗</a>
+    </div>
+    <p id="don-msg" class="perm-hint"></p>
+  </div>
 </section>
 
 <!-- ══════════ TAB: ESTADÍSTICAS ══════════ -->
 <section id="tab-estadisticas" class="tab-content hidden">
   <h2 class="section-title">Estadísticas del sitio</h2>
   <div id="stats-grid" class="stats-grid"></div>
-  <div id="top-archivos-wrap" style="margin-top:24px"></div>
+  <div class="graficos-grid">
+    <figure class="grafico" id="g-actividad"></figure>
+    <figure class="grafico" id="g-categorias"></figure>
+    <figure class="grafico" id="g-tipos"></figure>
+    <figure class="grafico" id="g-top"></figure>
+  </div>
 </section>
 
 <!-- ══════════ TAB: REPORTES ══════════ -->
@@ -111,10 +215,14 @@
   </div>
 </section>
 
+  </div>
+</div>
+
 <div class="vhs-overlay"></div>
 
-<script src="temas.js"></script>
-<script src="auth.js"></script>
-<script src="admin.js"></script>
+<script src="temas.js?v=20260822q"></script>
+<script src="auth.js?v=20260822q"></script>
+<script src="iconos.js?v=20260822q"></script>
+<script src="admin.js?v=20260822q"></script>
 </body>
 </html>

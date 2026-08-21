@@ -14,11 +14,11 @@ const TEMAS = {
     nombre: 'Verde Fantasma',
     icono: '🟢',
     vars: {
-      '--red':      '#22c55e',
-      '--red-2':    '#16a34a',
-      '--red-dark': '#14532d',
-      '--red-bg':   '#052e16',
-      '--red-glow': 'rgba(34,197,94,.35)',
+      '--red':      '#2ee66e',
+      '--red-2':    '#1fbe57',
+      '--red-dark': '#0f5c2c',
+      '--red-bg':   '#04220f',
+      '--red-glow': 'rgba(46,230,110,.38)',
     }
   },
   azul: {
@@ -152,7 +152,9 @@ function crearSelectorTema() {
 // así que se cambia a la versión negra.
 function actualizarLogo() {
   const modo = document.documentElement.getAttribute('data-modo') || 'oscuro';
-  const src  = modo === 'claro' ? '/logoblack.png' : '/logo.png';
+  // Versión a la medida de la barra (168x138 = 3x del tamaño mostrado).
+  // Los originales de 1760x1444 siguen en su sitio por si hacen falta.
+  const src  = modo === 'claro' ? '/logoblack-nav.png' : '/logo-nav.png';
   document.querySelectorAll('img[alt="Archivo Paranormal"]').forEach(img => {
     img.setAttribute('src', src);
   });

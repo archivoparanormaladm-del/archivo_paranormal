@@ -1,27 +1,138 @@
 /* ── Tabs ── */
-.tabs {
-  display: flex; gap: 0;
-  border-bottom: 1px solid var(--border);
-  padding: 0 32px;
-  background: #0e0e0e;
+/* ══════════════════════════════════════════════════════════
+   ADMINISTRACIÓN — barra lateral tipo Ajustes del Sistema
+   Las secciones dejan de ser una tira horizontal con scroll y
+   pasan a una columna izquierda agrupada, con el contenido a
+   la derecha. En móvil la columna se pliega a una rejilla de
+   dos, para que las ocho secciones quepan sin desplazarse.
+   ══════════════════════════════════════════════════════════ */
+.admin-layout {
+  display: flex; align-items: flex-start; gap: 18px;
+  padding: 18px; min-height: calc(100vh - 56px);
 }
-.tab {
-  background: none; border: none;
-  color: var(--text-3); font-family: inherit;
-  font-size: 13px; font-weight: 500;
-  padding: 14px 20px; cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px; transition: color .2s;
-  display: flex; align-items: center; gap: 6px;
-}
-.tab.active { color: var(--red); border-bottom-color: var(--red); }
-.tab:hover  { color: var(--text-2); }
 
-.tab-content { padding: 28px 32px; }
+.admin-sidebar {
+  width: 248px; flex-shrink: 0;
+  position: sticky; top: 74px;
+  padding: 12px 10px;
+  border-radius: 20px;
+  background:
+    radial-gradient(120% 55% at 50% 0%, var(--glass-tint) 0%, transparent 62%),
+    color-mix(in srgb, var(--bg-1) 84%, transparent);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-bd);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.14),
+    0 8px 20px rgba(0,0,0,.18),
+    0 20px 44px rgba(0,0,0,.22),
+    inset 0 1px 0 var(--glass-hi);
+}
+
+.side-grupo {
+  font-size: .66rem; font-weight: 700; letter-spacing: 1.6px;
+  text-transform: uppercase; color: var(--text-3);
+  padding: 12px 10px 6px;
+}
+.side-grupo:first-child { padding-top: 4px; }
+
+/* ── Elemento de la barra ── */
+.tab {
+  width: 100%;
+  display: flex; align-items: center; gap: 10px;
+  background: none; border: none;
+  color: var(--text-2); font-family: inherit;
+  font-size: 13.5px; font-weight: 500; text-align: left;
+  padding: 7px 10px; margin-bottom: 2px;
+  border-radius: 10px; cursor: pointer;
+  transition: background .14s, color .14s;
+}
+.tab:hover { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
+
+/* Insignia del icono: cuadrado redondeado con el color del tema,
+   girado un poco por sección para distinguirlas de un vistazo. */
+.tab-ico {
+  width: 26px; height: 26px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: 7px;
+  filter: hue-rotate(var(--tono, 0deg));
+  background: linear-gradient(160deg,
+    color-mix(in srgb, var(--red) 82%, #ffffff) 0%,
+    var(--red) 55%, var(--red-2) 100%);
+  box-shadow: 0 1px 2px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.tab-ico svg {
+  width: 15px; height: 15px; color: #fff;
+  fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.tab-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Seleccionada: relleno del acento, como en Ajustes del Sistema */
+.tab.active {
+  background: var(--red-2); color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.18);
+}
+.tab.active .tab-ico {
+  background: rgba(255,255,255,.22);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.28);
+  filter: none;
+}
+.tab:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+
+/* ── Panel de contenido ── */
+/* ── Panel de contenido: tarjeta de vidrio, igual que la barra ── */
+/* `max-width` es imprescindible: en el modo columna (tableta y móvil) la
+   línea flex crece hasta el contenido más ancho, así que la tabla de
+   usuarios estiraba el panel a 924 px dentro de un layout de 753 y
+   desbordaba la página entera. Acotado, la tabla se desplaza en su caja. */
+.admin-panel {
+  flex: 1 1 auto; min-width: 0; max-width: 100%;
+}
+.tab-content {
+  max-width: 100%;
+  padding: 22px 24px 26px;
+  border-radius: 20px;
+  background:
+    radial-gradient(120% 40% at 50% 0%, var(--glass-tint) 0%, transparent 60%),
+    color-mix(in srgb, var(--bg-1) 84%, transparent);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-bd);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.14),
+    0 8px 20px rgba(0,0,0,.18),
+    0 20px 44px rgba(0,0,0,.22),
+    inset 0 1px 0 var(--glass-hi);
+}
 .section-title {
-  color: var(--text-3); font-size: 11px; font-weight: 600;
-  letter-spacing: .8px; margin-bottom: 20px;
+  color: var(--text-2); font-size: .78rem; font-weight: 700;
+  letter-spacing: 2px; margin-bottom: 18px;
   text-transform: uppercase;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--glass-bd);
+}
+
+/* ══ Piezas internas: un solo lenguaje para todas las tarjetas ══
+   Antes cada bloque tenía su radio y su fondo (6, 7, 10, 12 px sobre
+   --bg-1 o --bg-2). Ahora comparten superficie, radio y relieve. */
+.pendiente-card,
+.stat-card,
+.cat-item,
+.ticket-card,
+.perm-item,
+.ico-picker {
+  background: color-mix(in srgb, var(--bg-2) 55%, transparent);
+  border: 1px solid var(--glass-bd);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.10), inset 0 1px 0 rgba(255,255,255,.05);
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.pendiente-card:hover,
+.cat-item:hover,
+.ticket-card:hover {
+  border-color: color-mix(in srgb, var(--red) 30%, transparent);
+  box-shadow: 0 4px 14px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.06);
 }
 
 /* ── Cards pendientes ── */
@@ -31,15 +142,14 @@
   gap: 16px;
 }
 .pendiente-card {
-  background: var(--bg-1); border: 1px solid var(--border);
-  border-radius: 10px; padding: 16px;
+  padding: 16px;
   display: flex; flex-direction: column; gap: 10px;
 }
 .pendiente-card img,
 .pendiente-card video,
 .pendiente-card audio {
   width: 100%; max-height: 180px;
-  object-fit: cover; border-radius: 6px;
+  object-fit: cover; border-radius: 10px;
 }
 
 .p-nombre  { font-size: 12px; color: var(--text-2); word-break: break-all; }
@@ -55,8 +165,8 @@
 }
 .cat-badge {
   font-size: 11px; font-weight: 600; padding: 3px 8px;
-  background: rgba(74,222,128,.08); color: #4ade80;
-  border: 1px solid rgba(74,222,128,.2);
+  background: var(--ok-bg); color: var(--ok);
+  border: 1px solid var(--ok-bd);
   border-radius: 20px; align-self: flex-start;
 }
 
@@ -68,11 +178,14 @@
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
 .btn-accion:hover { opacity: .85; transform: translateY(-1px); }
-.btn-verde { background: rgba(74,222,128,.12); color: #4ade80; border: 1px solid rgba(74,222,128,.25); }
-.btn-rojo  { background: rgba(239,68,68,.12);  color: #f87171; border: 1px solid rgba(239,68,68,.25); }
+.btn-verde { background: var(--ok-bg); color: var(--ok); border: 1px solid var(--ok-bd); }
+.btn-rojo  { background: var(--peligro-bg); color: var(--peligro); border: 1px solid var(--peligro-bd); }
 
 /* ── Tabla usuarios ── */
-.tabla-usuarios { width: 100%; border-collapse: collapse; font-size: 13px; }
+/* La tabla no cabe en móvil: se desplaza dentro de su caja en lugar de
+   ensanchar la página entera. */
+#tabla-usuarios-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.tabla-usuarios { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 13px; }
 .tabla-usuarios th {
   text-align: left; padding: 10px 14px;
   color: var(--text-3); border-bottom: 1px solid var(--border);
@@ -93,8 +206,8 @@
 .perfil-2 { border-color: #d97706; color: #fbbf24; background: rgba(217,119,6,.08); }
 .perfil-3 { border-color: #4f46e5; color: #818cf8; background: rgba(79,70,229,.08); }
 
-.estado-bloq { color: #f87171; font-size: 12px; font-weight: 500; }
-.estado-ok   { color: #4ade80; font-size: 12px; font-weight: 500; }
+.estado-bloq { color: var(--peligro); font-size: 12px; font-weight: 500; }
+.estado-ok   { color: var(--ok); font-size: 12px; font-weight: 500; }
 
 .acciones-usuario { display: flex; gap: 5px; flex-wrap: wrap; }
 .btn-mini {
@@ -103,13 +216,13 @@
   cursor: pointer; border-radius: 6px; transition: background .15s;
   display: flex; align-items: center; gap: 4px;
 }
-.btn-mini-rojo   { border-color: rgba(239,68,68,.3);   color: #f87171; }
+.btn-mini-rojo   { border-color: var(--peligro-bd); color: var(--peligro); }
 .btn-mini-rojo:hover { background: rgba(239,68,68,.08); }
-.btn-mini-verde  { border-color: rgba(74,222,128,.3);  color: #4ade80; }
+.btn-mini-verde  { border-color: var(--ok-bd); color: var(--ok); }
 .btn-mini-verde:hover { background: rgba(74,222,128,.08); }
 .btn-mini-gris   { border-color: var(--border); color: var(--text-3); }
 .btn-mini-gris:hover  { background: var(--bg-3); color: var(--text-2); }
-.btn-mini-azul   { border-color: rgba(79,70,229,.3);   color: #818cf8; }
+.btn-mini-azul   { border-color: var(--info-bd); color: var(--info); }
 .btn-mini-azul:hover  { background: rgba(79,70,229,.08); }
 
 /* Modal contraseña */
@@ -170,31 +283,122 @@
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 14px;
 }
-.stat-card {
-  background: var(--bg-2); border: 1px solid var(--border);
-  border-radius: 10px; padding: 18px 16px; text-align: center;
-}
+.stat-card { padding: 20px 16px; text-align: center; }
 .stat-valor { font-size: 2rem; font-weight: 700; color: var(--red); margin-bottom: 6px; }
 .stat-label { font-size: 12px; color: var(--text-3); }
 
 /* ══ RESPONSIVE ADMIN ══ */
+/* En pantalla estrecha la barra se pliega arriba como rejilla de dos
+   columnas: las ocho secciones caben enteras y se acabó el desplazamiento
+   horizontal que obligaba a arrastrar para ver las últimas. */
+/* ══ Colores semánticos ══
+   Aprobar/rechazar necesitan verde y rojo propios (no el acento del tema,
+   que puede SER verde o rojo y volvería ambiguo el par). Se centralizan
+   aquí y se ajustan en modo claro, donde los tonos claros no contrastan. */
+:root {
+  --ok:      #4ade80;
+  --ok-bg:   rgba(74,222,128,.12);
+  --ok-bd:   rgba(74,222,128,.28);
+  --peligro:    #f87171;
+  --peligro-bg: rgba(239,68,68,.12);
+  --peligro-bd: rgba(239,68,68,.28);
+  --info:    #818cf8;
+  --info-bd: rgba(129,140,248,.3);
+}
+:root[data-modo="claro"] {
+  --ok:      #15803d;
+  --ok-bg:   rgba(22,163,74,.10);
+  --ok-bd:   rgba(22,163,74,.30);
+  --peligro:    #b91c1c;
+  --peligro-bg: rgba(220,38,38,.09);
+  --peligro-bd: rgba(220,38,38,.28);
+  --info:    #4338ca;
+  --info-bd: rgba(67,56,202,.28);
+}
+
+@media (max-width: 1200px) {
+  .admin-sidebar { width: 210px; }
+  .tab-content   { padding: 20px 18px 22px; }
+}
+
+@media (max-width: 900px) {
+  /* En columna, `align-items` gobierna el ANCHO. El `flex-start` que en
+     escritorio alinea los dos paneles arriba, aquí hacía que el panel se
+     ajustara a su contenido (363 px de 470 disponibles) y dejara media
+     pantalla en blanco. */
+  .admin-layout  { flex-direction: column; align-items: stretch; gap: 14px; padding: 14px; }
+  .admin-panel   { width: 100%; }
+  .admin-sidebar {
+    width: 100%; position: static;
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 4px 8px; padding: 12px;
+  }
+  .side-grupo { grid-column: 1 / -1; padding: 8px 4px 2px; }
+  .side-grupo:first-child { padding-top: 2px; }
+  .tab { margin-bottom: 0; font-size: 12.5px; padding: 8px 9px; }
+  .tab-ico { width: 24px; height: 24px; border-radius: 6px; }
+  .tab-ico svg { width: 14px; height: 14px; }
+  .tab-content { padding: 4px 2px 30px; }
+}
 @media (max-width: 768px) {
-  .tabs { padding: 0 16px; overflow-x: auto; flex-wrap: nowrap; }
-  .tab  { white-space: nowrap; padding: 12px 14px; font-size: 12px; }
-  .tab-content { padding: 20px 16px; }
+  .tab-content     { padding: 16px 14px 18px; border-radius: 16px; }
+  .section-title   { font-size: .72rem; letter-spacing: 1.6px; margin-bottom: 14px; padding-bottom: 11px; }
   .lista-pendientes { grid-template-columns: 1fr; }
+  .cat-form input  { min-width: 0; }
   .tabla-usuarios { font-size: 12px; }
   .tabla-usuarios th, .tabla-usuarios td { padding: 8px 10px; }
   .acciones-usuario { flex-direction: column; }
+}
+/* En móvil se ocultan los títulos de grupo y las ocho secciones quedan en
+   una rejilla de dos: con una sola columna la barra medía 449 px y empujaba
+   el contenido más allá de media pantalla antes de poder leer nada. */
+@media (max-width: 560px) {
+  .admin-sidebar { grid-template-columns: repeat(2, 1fr); gap: 5px; padding: 10px; }
+  .side-grupo    { display: none; }
+  .tab           { font-size: 12px; padding: 7px 8px; gap: 8px; }
+  .tab-txt       { white-space: normal; line-height: 1.25; }
+  .tab-ico       { width: 22px; height: 22px; border-radius: 6px; }
+  .tab-ico svg   { width: 13px; height: 13px; }
 }
 @media (max-width: 480px) {
   .stats-grid { grid-template-columns: repeat(2,1fr); }
 }
 
+/* En modo claro la barra se aclara y suaviza sus sombras */
+:root[data-modo="claro"] .tab-content {
+  background: rgba(255,255,255,.88);
+  border-color: rgba(0,0,0,.07);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.05),
+    0 8px 20px rgba(0,0,0,.07),
+    0 20px 44px rgba(0,0,0,.09),
+    inset 0 1px 0 rgba(255,255,255,.95);
+}
+:root[data-modo="claro"] .pendiente-card,
+:root[data-modo="claro"] .stat-card,
+:root[data-modo="claro"] .cat-item,
+:root[data-modo="claro"] .ticket-card,
+:root[data-modo="claro"] .perm-item,
+:root[data-modo="claro"] .ico-picker {
+  background: rgba(0,0,0,.025);
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+
+:root[data-modo="claro"] .admin-sidebar {
+  background: rgba(255,255,255,.88);
+  border-color: rgba(0,0,0,.07);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.05),
+    0 8px 20px rgba(0,0,0,.07),
+    0 20px 44px rgba(0,0,0,.09),
+    inset 0 1px 0 rgba(255,255,255,.95);
+}
+:root[data-modo="claro"] .tab:hover { background: rgba(0,0,0,.05); }
+
 /* ── Categorías ── */
 .cat-form {
   display: flex; gap: 10px; flex-wrap: wrap;
-  margin-bottom: 8px; max-width: 620px;
+  margin-bottom: 10px;
 }
 .cat-form input {
   flex: 1; min-width: 220px;
@@ -205,21 +409,26 @@
 .cat-form input:focus { outline: none; border-color: var(--red-2); }
 .cat-item {
   display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; background: var(--bg-1); border: 1px solid var(--border);
-  border-radius: 10px; padding: 12px 16px; margin-bottom: 8px;
-  max-width: 620px;
+  gap: 12px; padding: 11px 14px; margin-bottom: 8px;
 }
-.cat-info { display: flex; align-items: center; gap: 12px; }
+#lista-categorias {
+  display: grid; gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  align-items: start;
+}
+#lista-categorias .cat-item { margin-bottom: 0; }
+/* El selector de iconos se despliega a lo ancho de toda la rejilla */
+#lista-categorias .ico-picker-inline { grid-column: 1 / -1; }
+
+.cat-info { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.cat-nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cat-nombre { font-size: 14px; font-weight: 600; color: var(--text); }
 .cat-count { font-size: 12px; color: var(--text-3); }
 .cat-acciones { display: flex; gap: 6px; }
 .btn-mini[disabled] { opacity: .4; cursor: not-allowed; }
 
 /* ── Soporte (bandeja) ── */
-.ticket-card {
-  background: var(--bg-1); border: 1px solid var(--border);
-  border-radius: 12px; padding: 16px; margin-bottom: 12px; max-width: 720px;
-}
+.ticket-card { padding: 16px; margin-bottom: 12px; }
 .ticket-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .ticket-num { font-size: 14px; font-weight: 700; color: var(--red); letter-spacing: .5px; }
 .ticket-badge {
@@ -230,9 +439,10 @@
 .ticket-com { font-size: 13px; color: var(--text-2); line-height: 1.5; margin-bottom: 8px; }
 .ticket-meta { font-size: 11px; color: var(--text-3); margin-bottom: 10px; }
 .ticket-resp {
-  font-size: 13px; color: var(--text); background: var(--bg-2);
-  border-left: 3px solid var(--red); padding: 8px 12px;
-  border-radius: 6px; margin-bottom: 10px;
+  font-size: 13px; color: var(--text);
+  background: var(--accent-soft);
+  border-left: 3px solid var(--red); padding: 9px 12px;
+  border-radius: 0 10px 10px 0; margin-bottom: 10px;
 }
 .ticket-resp span { font-weight: 600; color: var(--red); }
 .ticket-form textarea {
@@ -244,13 +454,21 @@
 .ticket-acciones { display: flex; gap: 8px; margin-top: 8px; }
 
 /* ── Permisos (switches) ── */
-.perm-hint { font-size: 12px; color: var(--text-3); margin-bottom: 16px; max-width: 620px; }
+.perm-hint { font-size: 12.5px; color: var(--text-3); line-height: 1.6; margin-bottom: 16px; max-width: 70ch; }
 .perm-item {
   display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; background: var(--bg-1); border: 1px solid var(--border);
-  border-radius: 10px; padding: 14px 18px; margin-bottom: 8px; max-width: 620px;
+  gap: 12px; padding: 13px 16px; margin-bottom: 8px;
 }
-.perm-label { font-size: 14px; color: var(--text); }
+/* Los permisos son pares etiqueta+interruptor: en pantalla ancha caben
+   dos por fila sin apretarse, y así no queda media pantalla vacía. */
+#lista-permisos {
+  display: grid; gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+}
+#lista-permisos, #lista-categorias { min-width: 0; }
+#lista-permisos > *, #lista-categorias > * { min-width: 0; }
+#lista-permisos .perm-item { margin-bottom: 0; }
+.perm-label { font-size: 13.5px; color: var(--text); line-height: 1.4; min-width: 0; }
 .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider {
@@ -279,3 +497,461 @@
 .perfil-badge.perfil-0 {
   background: rgba(168,85,247,.14); color: #c084fc; border: 1px solid rgba(168,85,247,.35);
 }
+
+/* ══════════════════════════════════════════════════════════
+   SELECTOR DE ICONOS DE CATEGORÍA
+   Se usa en el formulario "crear categoría" y, desplegado en
+   línea, al pulsar "Icono" sobre una categoría existente.
+   ══════════════════════════════════════════════════════════ */
+
+/* Icono actual mostrado en cada fila de la lista */
+.cat-icono {
+  display: grid; place-items: center;
+  width: 34px; height: 34px; flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-soft-bd);
+}
+.cat-icono svg {
+  width: 19px; height: 19px;
+  color: var(--red);
+  fill: none; stroke: currentColor;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+}
+
+.ico-picker {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin: 12px 0 4px;
+  max-height: 340px; overflow-y: auto;
+}
+.ico-picker-inline {
+  margin: 0 0 10px;
+  border-color: var(--accent-soft-bd);
+  box-shadow: inset 0 0 0 1px var(--accent-soft);
+}
+
+.ico-grupo + .ico-grupo { margin-top: 16px; }
+.ico-grupo-titulo {
+  font-size: .68rem; font-weight: 700; letter-spacing: 1.6px;
+  text-transform: uppercase; color: var(--text-3);
+  margin-bottom: 9px;
+}
+.ico-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  gap: 8px;
+}
+
+.ico-opcion {
+  aspect-ratio: 1; display: grid; place-items: center;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer; padding: 0;
+  transition: border-color .15s, background .15s, transform .15s, box-shadow .15s;
+}
+.ico-opcion svg {
+  width: 22px; height: 22px;
+  color: var(--text-2);
+  fill: none; stroke: currentColor;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+  transition: color .15s;
+}
+.ico-opcion:hover {
+  border-color: var(--red-2);
+  transform: translateY(-2px);
+}
+.ico-opcion:hover svg { color: var(--red); }
+.ico-opcion.activo {
+  background: var(--accent-soft);
+  border-color: var(--red);
+  box-shadow: 0 0 0 2px var(--accent-soft), 0 0 14px var(--red-glow);
+}
+.ico-opcion.activo svg { color: var(--red); }
+
+.ico-picker-acciones {
+  display: flex; gap: 8px; justify-content: flex-end;
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--border);
+  position: sticky; bottom: -16px;
+  background: var(--bg-1);
+}
+
+@media (max-width: 600px) {
+  .ico-picker { padding: 12px; max-height: 280px; }
+  .ico-grid   { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 6px; }
+}
+
+/* ── Donaciones ── */
+.don-form { max-width: 560px; display: flex; flex-direction: column; gap: 6px; }
+.don-form label {
+  font-size: 12px; font-weight: 600; color: var(--text-2);
+  margin-top: 10px;
+}
+.don-form input[type="url"],
+.don-form input[type="text"] {
+  background: var(--bg-2); border: 1px solid var(--border); color: var(--text);
+  font-family: inherit; font-size: 13px; padding: 10px 12px;
+  border-radius: 9px; outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.don-form input:focus { border-color: var(--red-2); box-shadow: 0 0 0 3px var(--accent-soft); }
+.don-ayuda { font-size: 11.5px; color: var(--text-3); line-height: 1.55; margin-top: 2px; }
+.don-check {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 400 !important; color: var(--text-2);
+  margin-top: 14px; cursor: pointer;
+}
+.don-check input { width: 16px; height: 16px; accent-color: var(--red-2); cursor: pointer; }
+.don-acciones { display: flex; gap: 8px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+#don-probar { text-decoration: none; display: inline-flex; align-items: center; }
+
+
+/* ══════════════════════════════════════════════════════════
+   AJUSTES RESPONSIVE FINALES
+   Van al final a propósito: las rejillas de permisos y categorías se
+   definen más arriba y, con igual especificidad, gana la última regla
+   del archivo. Puestos antes, el override no llegaba a aplicarse.
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+  /* Una sola columna antes de que las tarjetas queden estrechas */
+  #lista-permisos, #lista-categorias {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .tab-content   { padding: 16px 14px 18px; border-radius: 16px; }
+  .section-title { font-size: .72rem; letter-spacing: 1.6px; margin-bottom: 14px; padding-bottom: 11px; }
+  .lista-pendientes { grid-template-columns: minmax(0, 1fr); }
+  .stats-grid       { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .cat-form input   { min-width: 0; }
+  .cat-item, .perm-item { padding: 11px 13px; }
+  .perm-label { font-size: 13px; }
+}
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cat-form   { flex-direction: column; align-items: stretch; }
+  .cat-item   { flex-wrap: wrap; }
+  .cat-acciones { width: 100%; }
+}
+
+/* Los nombres de archivo sin espacios (Gemini_Generated_Image_5xem…) no
+   cortan solos y sacaban la lista fuera de la tarjeta. */
+.top-item {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px; min-width: 0;
+  padding: 10px 14px; margin-bottom: 8px;
+  background: color-mix(in srgb, var(--bg-2) 55%, transparent);
+  border: 1px solid var(--glass-bd); border-radius: 12px;
+}
+/* Los nombres de archivo sin espacios (Gemini_Generated_Image_5xem…) no
+   cortan solos y sacaban la lista fuera de la tarjeta. */
+.top-nombre {
+  font-size: 13px; color: var(--text);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.top-cifras { font-size: 12px; color: var(--red); flex-shrink: 0; white-space: nowrap; }
+:root[data-modo="claro"] .top-item { background: rgba(0,0,0,.025); }
+
+/* ── Peso por tipo de archivo ── */
+.pesos-grid {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  margin-bottom: 18px;
+}
+.peso-item {
+  display: flex; flex-direction: column; gap: 7px;
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--bg-2) 55%, transparent);
+  border: 1px solid var(--glass-bd); border-radius: 14px;
+  min-width: 0;
+}
+.peso-item label { font-size: 13px; font-weight: 600; color: var(--text-2); }
+.peso-campo { display: flex; align-items: center; gap: 8px; }
+.peso-campo input {
+  width: 100%; min-width: 0;
+  background: var(--bg-2); border: 1px solid var(--border); color: var(--text);
+  font-family: inherit; font-size: 14px; font-variant-numeric: tabular-nums;
+  padding: 9px 12px; border-radius: 9px; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.peso-campo input:focus { border-color: var(--red-2); box-shadow: 0 0 0 3px var(--accent-soft); }
+.peso-campo .peso-unidad { font-size: 13px; color: var(--text-3); flex-shrink: 0; }
+
+.pesos-pie {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap;
+  padding-top: 14px; border-top: 1px solid var(--glass-bd);
+}
+.pesos-global { font-size: 12.5px; color: var(--text-3); }
+.pesos-global strong { color: var(--text-2); font-variant-numeric: tabular-nums; }
+.pesos-pie .btn-accion { flex: 0 0 auto; padding: 9px 22px; }
+
+/* ── Modal de edición de publicación ── */
+.btn-editar {
+  flex: unset; padding: 8px 14px;
+  background: var(--accent-soft); color: var(--red);
+  border: 1px solid var(--accent-soft-bd);
+}
+.modal-editar {
+  max-width: 520px; width: 100%;
+  max-height: 88vh; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 4px;
+  text-align: left;
+}
+.modal-editar label {
+  font-size: 12px; font-weight: 600; color: var(--text-2); margin-top: 12px;
+}
+.modal-editar input[type="text"],
+.modal-editar textarea,
+.modal-editar select {
+  width: 100%;
+  background: var(--bg-2); border: 1px solid var(--border); color: var(--text);
+  font-family: inherit; font-size: 13.5px;
+  padding: 10px 12px; border-radius: 10px; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.modal-editar textarea { resize: vertical; line-height: 1.55; }
+.modal-editar input:focus,
+.modal-editar textarea:focus,
+.modal-editar select:focus { border-color: var(--red-2); box-shadow: 0 0 0 3px var(--accent-soft); }
+.modal-editar select:disabled { opacity: .55; cursor: not-allowed; }
+
+/* Previsualización del contenido que se está editando */
+.edit-preview {
+  margin: 14px 0 8px;
+  border-radius: 14px; overflow: hidden;
+  background: #0a0a0a;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 90px; max-height: 300px;
+}
+.edit-preview img,
+.edit-preview video { width: 100%; height: auto; max-height: 300px; object-fit: contain; display: block; }
+.edit-preview audio { width: 100%; padding: 18px 14px; }
+.edit-sinmedia {
+  padding: 34px 16px; font-size: 12.5px; color: var(--text-3); text-align: center;
+}
+.edit-archivo {
+  font-size: 11.5px; color: var(--text-3); word-break: break-all; line-height: 1.5;
+}
+.edit-archivo span { text-transform: uppercase; letter-spacing: .4px; }
+.edit-nota { font-size: 11.5px; color: var(--text-3); margin-top: 5px; }
+.edit-acciones {
+  display: flex; gap: 8px; justify-content: flex-end;
+  margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--glass-bd);
+}
+.edit-acciones .btn-accion { flex: 0 0 auto; padding: 9px 18px; }
+
+:root[data-modo="claro"] .peso-item  { background: rgba(0,0,0,.025); }
+:root[data-modo="claro"] .edit-preview { background: #e4e4e7; }
+
+@media (max-width: 560px) {
+  .pesos-grid  { grid-template-columns: minmax(0, 1fr); }
+  .pesos-pie   { flex-direction: column; align-items: stretch; }
+  .pesos-pie .btn-accion { width: 100%; }
+  .modal-editar { max-width: 100%; }
+  .edit-acciones .btn-accion { flex: 1; }
+}
+.pesos-global em {
+  display: block; font-style: normal; font-size: 11.5px;
+  color: var(--text-3); margin-top: 3px; line-height: 1.5; max-width: 52ch;
+}
+
+/* ── Columna Permisos ── */
+.btn-permisos {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-color: var(--accent-soft-bd); color: var(--red);
+  background: var(--accent-soft);
+  white-space: nowrap;
+}
+.btn-permisos svg { flex-shrink: 0; }
+.btn-permisos[disabled] {
+  background: none; color: var(--text-3);
+  border-color: var(--border); opacity: .5; cursor: not-allowed;
+}
+
+/* ── Menú del lápiz ──
+   Agrupa editar datos, bloquear, contraseña, subida y eliminar, que antes
+   llenaban la fila de botones sueltos. */
+.menu-lapiz { position: relative; display: inline-block; }
+.btn-lapiz {
+  display: grid; place-items: center;
+  width: 30px; height: 30px; padding: 0;
+  background: var(--bg-2); color: var(--text-2);
+  border: 1px solid var(--border); border-radius: 9px;
+  cursor: pointer; transition: color .15s, border-color .15s, background .15s;
+}
+.btn-lapiz:hover { color: var(--red); border-color: var(--red-2); background: var(--accent-soft); }
+
+.lapiz-panel {
+  /* La posición la calcula el JS (fixed) para que el contenedor con scroll
+     de la tabla no lo recorte. */
+  position: fixed; z-index: 400;
+  min-width: 210px; padding: 6px;
+  display: flex; flex-direction: column; gap: 2px;
+  background: color-mix(in srgb, var(--bg-1) 96%, transparent);
+  backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-bd); border-radius: 13px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.18), 0 12px 30px rgba(0,0,0,.28);
+}
+.lapiz-panel.hidden { display: none; }
+.lapiz-op {
+  font-family: inherit; font-size: 12.5px; text-align: left;
+  color: var(--text-2); background: none; border: none;
+  padding: 8px 10px; border-radius: 9px; cursor: pointer;
+  white-space: nowrap; transition: background .13s, color .13s;
+}
+.lapiz-op:hover { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
+.lapiz-op-peligro { color: var(--peligro); }
+.lapiz-op-peligro:hover { background: var(--peligro-bg); color: var(--peligro); }
+
+:root[data-modo="claro"] .lapiz-panel { background: rgba(255,255,255,.97); }
+:root[data-modo="claro"] .lapiz-op:hover { background: rgba(0,0,0,.05); }
+
+/* ── Modal de permisos ── */
+.modal-permisos { max-width: 560px; width: 100%; text-align: left; max-height: 86vh; overflow-y: auto; }
+.modal-permisos .perm-hint { margin: 10px 0 16px; }
+.perm-lista { display: flex; flex-direction: column; gap: 8px; }
+.perm-lista .perm-item { margin-bottom: 0; }
+
+@media (max-width: 560px) {
+  .lapiz-panel { min-width: 180px; }
+  .modal-permisos { max-width: 100%; }
+}
+
+/* ── Modal: editar datos de usuario ── */
+.modal-datos { max-width: 420px; width: 100%; text-align: left; }
+.modal-datos label {
+  display: block; font-size: 12px; font-weight: 600;
+  color: var(--text-2); margin-top: 14px; margin-bottom: 5px;
+}
+.modal-datos input {
+  width: 100%;
+  background: var(--bg-2); border: 1px solid var(--border); color: var(--text);
+  font-family: inherit; font-size: 13.5px;
+  padding: 10px 12px; border-radius: 10px; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.modal-datos input:focus { border-color: var(--red-2); box-shadow: 0 0 0 3px var(--accent-soft); }
+.modal-datos .edit-nota { margin-top: 5px; }
+.modal-datos .error-msg { margin-top: 14px; }
+
+@media (max-width: 480px) { .modal-datos { max-width: 100%; } }
+
+/* Línea de trazabilidad de la aprobación en "Archivos publicados".
+   Se separa del resto de datos con un filete: son metadatos de
+   moderación, no de la publicación. */
+.p-aprobacion {
+  margin-top: 6px; padding-top: 6px;
+  border-top: 1px dashed var(--border);
+  color: var(--text-3);
+}
+.p-aprobacion strong { color: var(--text-2); }
+
+/* ══════════════════════════════════════════════════════════
+   PANEL DE ESTADÍSTICAS
+   Las láminas son recesivas y el dato es lo único con peso.
+   Rejilla y ejes a un paso del fondo; nada de líneas
+   discontinuas ni bordes alrededor de las marcas.
+   ══════════════════════════════════════════════════════════ */
+.stat-destacada .stat-valor { font-size: 2rem; }
+.stat-destacada { border-color: var(--accent-soft-bd); }
+.stat-alerta .stat-valor { color: var(--red); }
+
+.graficos-grid {
+  margin-top: 24px;
+  display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+.grafico { margin: 0; }
+.g-cabecera { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+.g-titulo { font-size: 13px; font-weight: 600; color: var(--text); }
+.g-sub    { font-size: 11.5px; color: var(--text-3); }
+
+.g-lamina {
+  background: var(--bg-1); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px;
+}
+.g-vacio { font-size: 12.5px; color: var(--text-3); text-align: center; padding: 24px 0; }
+.g-nota  { font-size: 11.5px; color: var(--text-3); margin-top: 10px; }
+.g-nota strong { color: var(--text-2); }
+
+/* ── Área de actividad ── */
+.g-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.g-rejilla { stroke: var(--border); stroke-width: 1; }
+.g-area  { fill: var(--red); opacity: .10; }
+.g-linea { fill: none; stroke: var(--red); stroke-width: 2;
+           stroke-linejoin: round; stroke-linecap: round; }
+/* Anillo del color de la lámina: mantiene legible el punto final
+   allí donde cruza la línea. */
+.g-punto { fill: var(--red); stroke: var(--bg-1); stroke-width: 2; }
+.g-eje-x { display: flex; justify-content: space-between;
+           font-size: 11px; color: var(--text-3); margin-top: 6px; }
+
+/* ── Barras horizontales ── */
+.g-barras { display: flex; flex-direction: column; gap: 10px; }
+.g-fila   { display: grid; grid-template-columns: minmax(0,7rem) 1fr auto;
+            align-items: center; gap: 10px; }
+.g-etq { font-size: 12px; color: var(--text-2);
+         overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-pista { height: 10px; border-radius: 5px;
+           background: color-mix(in srgb, var(--text) 6%, transparent); }
+/* Punta redondeada de 4 px y arranque recto sobre la línea base */
+.g-barra { display: block; height: 100%;
+           background: var(--red); border-radius: 0 4px 4px 0; }
+.g-val { font-size: 12px; font-weight: 600; color: var(--text);
+         font-variant-numeric: tabular-nums; min-width: 2ch; text-align: right; }
+
+/* ── Barra apilada por tipo ── */
+.g-apilada { display: flex; height: 14px; border-radius: 7px; overflow: hidden;
+             gap: 2px;                       /* el hueco separa, no un borde */
+             background: var(--bg-1); }
+.g-seg { display: block; height: 100%; min-width: 3px; }
+.g-leyenda { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; }
+.g-leg { display: inline-flex; align-items: center; gap: 6px;
+         font-size: 12px; color: var(--text-2); }
+.g-leg strong { color: var(--text); font-variant-numeric: tabular-nums; }
+.g-punto-leg { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.g-pct { color: var(--text-3); font-size: 11px; }
+
+@media (max-width: 620px) {
+  .graficos-grid { grid-template-columns: 1fr; }
+  .g-fila { grid-template-columns: minmax(0,5rem) 1fr auto; }
+}
+
+/* ── Uso de almacenamiento ── */
+.alm-total {
+  background: var(--bg-1); border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px 20px;
+}
+/* Cifra protagonista: es el dato que se viene a mirar. */
+.alm-cifra {
+  font-size: 2.4rem; font-weight: 700; line-height: 1;
+  color: var(--text); font-variant-numeric: tabular-nums;
+}
+.alm-pie { font-size: 12px; color: var(--text-3); margin-top: 6px; }
+.alm-aviso {
+  margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px; color: var(--text-3);
+}
+.alm-aviso strong { color: var(--red); }
+
+/* ── Galería dentro de una tarjeta de administración ──
+   Un lote subido junto se revisa y se gestiona como una sola
+   publicación, así que sus piezas van en rejilla, no en tarjetas
+   separadas. Un hueco del color del fondo las separa. */
+.gal-rejilla {
+  display: grid; gap: 2px;
+  grid-template-columns: repeat(2, 1fr);
+  border-radius: 10px; overflow: hidden;
+  background: var(--border);
+  margin-bottom: 10px;
+}
+.gal-rejilla[data-n="3"] { grid-template-columns: repeat(3, 1fr); }
+.gal-rejilla[data-n="2"] { grid-template-columns: repeat(2, 1fr); }
+.gal-celda { display: block; aspect-ratio: 1 / 1; background: var(--bg-2); }
+.gal-celda img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gal-pie { font-size: 11.5px; color: var(--text-3); margin: -4px 0 10px; }

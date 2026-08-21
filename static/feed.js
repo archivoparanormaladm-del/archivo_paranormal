@@ -43,8 +43,36 @@ function linkify(s) {
 const IC_HEART   = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>';
 const IC_COMMENT = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
 const IC_SAVE    = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
-const IC_SHARE   = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>';
+const IC_REPOST  = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>';
+const IC_SHARE   = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>';
 const IC_EYE     = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+
+// "Notas" = interacciones totales de la publicación (me gusta + comentarios),
+// el contador que la referencia muestra bajo la imagen. En 0 se deja vacío
+// para que el pie quede limpio.
+function notasTexto(likes, comentarios) {
+  const n = (likes || 0) + (comentarios || 0);
+  return n ? n + (n === 1 ? ' nota' : ' notas') : '';
+}
+
+// Recalcula "N notas" a partir de los dos contadores de la tarjeta.
+function refrescarNotas(card) {
+  const el = card.querySelector('.feed-notas');
+  if (!el) return;
+  const likes = parseInt(card.querySelector('.feed-like-n')?.dataset.n) || 0;
+  const coms  = parseInt(card.querySelector('.feed-coment-n')?.dataset.n) || 0;
+  el.dataset.n = likes + coms;
+  el.textContent = notasTexto(likes, coms);
+}
+
+// Los contadores de la barra de acciones se ocultan en 0, para que el
+// estado por defecto sean iconos limpios (como en la referencia) sin
+// perder el número cuando lo hay. El valor real vive en data-n.
+function pintarContador(el, n) {
+  if (!el) return;
+  el.dataset.n = n;
+  el.textContent = n ? n : '';
+}
 
 async function cargarMasFeed() {
   if (feedCargando || feedFin) return;
@@ -71,13 +99,19 @@ function renderPost(a) {
   const link = `/carpeta.html?cat=${encodeURIComponent(a.categoria)}&archivo=${a.id}`;
   const usuario = a.subido_por ? '@' + a.subido_por : 'Anónimo';
   const puedeSeguir = feedMe.autenticado && !a.es_mio && a.subido_por;
-  const descLarga = (a.descripcion || '').length > 160;
+  // En una publicación de texto el cuerpo ES el contenido: la
+  // especificación dice que la altura se extiende con la entrada, así que
+  // no se trunca. En el resto sigue el corte a tres líneas con "Ver más".
+  const descLarga = a.tipo !== 'texto' && (a.descripcion || '').length > 160;
 
   const perfilHref = a.subido_por ? `/perfil.html?u=${encodeURIComponent(a.subido_por)}` : null;
   const card = document.createElement('article');
-  card.className = 'feed-card';
+  card.className = 'feed-card' + (a.tipo === 'texto' ? ' es-texto' : '');
   card.dataset.id = a.id;
   card.innerHTML = `
+    ${a.repost_por ? `<a class="feed-repost-de" href="/perfil.html?u=${encodeURIComponent(a.repost_por)}">
+         ${IC_REPOST}<span>@${a.repost_por} reposteó</span>
+       </a>` : ''}
     <div class="feed-head">
       ${perfilHref ? `<a href="${perfilHref}" class="feed-perfil-link">${avatarChip(a)}</a>` : avatarChip(a)}
       <div class="feed-head-info">
@@ -87,23 +121,35 @@ function renderPost(a) {
       ${puedeSeguir ? `<button class="feed-seguir ${a.siguiendo ? 'siguiendo' : ''}">${a.siguiendo ? 'Siguiendo' : 'Seguir'}</button>` : ''}
       <a class="feed-cat" href="/carpeta.html?cat=${encodeURIComponent(a.categoria)}">${a.categoria}</a>
     </div>
-    <div class="feed-media">${mediaHtmlPost(a)}</div>
-    ${a.asunto ? `<p class="feed-asunto">${escapeHtml(a.asunto)}</p>` : ''}
+    ${a.tipo === 'texto' ? ''
+      : (a.imagenes && a.imagenes.length > 1) ? photosetHtml(a)
+      : a.tipo === 'audio'                    ? audioPostHtml(a)
+      : `<div class="feed-media${a.aspecto ? ' con-encuadre' : ''}"
+             ${a.aspecto ? `style="aspect-ratio:${a.aspecto.replace(':', '/')};--encuadre:${a.encuadre || '50% 50%'}"` : ''}>${mediaHtmlPost(a)}</div>`}
+    ${a.asunto ? `<p class="feed-asunto${a.tipo === 'texto' ? ' es-texto' : ''}">${escapeHtml(a.asunto)}</p>` : ''}
     ${a.descripcion ? `<div class="feed-desc-wrap">
-        <p class="feed-desc ${descLarga ? 'truncada' : ''}">${linkify(a.descripcion)}</p>
+        <p class="feed-desc ${a.tipo === 'texto' ? 'es-texto' : ''} ${descLarga ? 'truncada' : ''}">${linkify(a.descripcion)}</p>
         ${descLarga ? '<button class="feed-vermas" type="button">Ver más</button>' : ''}
       </div>` : ''}
+    ${a.tipo === 'audio' && a.subido_por ? `<p class="feed-fuente">Fuente: ${a.subido_por}</p>` : ''}
     <div class="feed-stats">
-      <button class="feed-stat feed-like ${a.liked ? 'activo' : ''}" title="Me gusta">${IC_HEART}<span class="feed-like-n">${a.likes}</span></button>
-      <button class="feed-stat feed-coment-btn" title="Comentar">${IC_COMMENT}<span class="feed-coment-n">${a.comentarios}</span></button>
-      <button class="feed-stat feed-guardar ${a.guardado ? 'activo' : ''}" title="Guardar">${IC_SAVE}</button>
-      <button class="feed-stat feed-compartir" title="Compartir">${IC_SHARE}</button>
+      <button class="feed-notas" type="button" title="Ver comentarios"
+              data-n="${(a.likes || 0) + (a.comentarios || 0)}">${notasTexto(a.likes, a.comentarios)}</button>
       <span class="feed-stat feed-vistas" title="Visualizaciones">${IC_EYE}<span>${a.visitas}</span></span>
-      <a class="feed-stat feed-abrir" href="${link}">Abrir →</a>
+      <a class="feed-stat feed-abrir" href="${link}">Abrir</a>
+      <div class="feed-acciones">
+        <button class="feed-stat feed-compartir" title="Compartir">${IC_SHARE}</button>
+        <button class="feed-stat feed-coment-btn" title="Comentar">${IC_COMMENT}<span class="feed-coment-n" data-n="${a.comentarios}">${a.comentarios || ''}</span></button>
+        <button class="feed-stat feed-repost ${a.reposteado ? 'activo' : ''}"
+                title="${a.reposteado ? 'Quitar reposteo' : 'Repostear'}">${IC_REPOST}<span class="feed-repost-n" data-n="${a.reposts}">${a.reposts || ''}</span></button>
+        <button class="feed-stat feed-guardar ${a.guardado ? 'activo' : ''}" title="Guardar">${IC_SAVE}</button>
+        <button class="feed-stat feed-like ${a.liked ? 'activo' : ''}" title="Me gusta">${IC_HEART}<span class="feed-like-n" data-n="${a.likes}">${a.likes || ''}</span></button>
+      </div>
     </div>
   `;
   feedWrap.appendChild(card);
   activarReproductor(card);
+  activarLista(card);
 
   // Ver más / ver menos
   const verMas = card.querySelector('.feed-vermas');
@@ -119,9 +165,27 @@ function renderPost(a) {
   likeBtn.addEventListener('click', async () => {
     try {
       const d = await fetch(`/api/archivos/${a.id}/reaccion`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo: 'like' }) }).then(r => r.json());
-      card.querySelector('.feed-like-n').textContent = d.likes;
+      pintarContador(card.querySelector('.feed-like-n'), d.likes);
+      refrescarNotas(card);
       likeBtn.classList.toggle('activo', d.accion !== 'eliminada');
     } catch {}
+  });
+
+  // Repostear. La comprobación real está en el servidor (`login_required`);
+  // esto sólo evita el viaje y explica por qué no se puede.
+  const repostBtn = card.querySelector('.feed-repost');
+  repostBtn.addEventListener('click', async () => {
+    if (!feedMe.autenticado) { showToast('Inicia sesión para repostear.', 'error'); return; }
+    repostBtn.disabled = true;
+    try {
+      const d = await fetch(`/api/archivos/${a.id}/repost`, { method: 'POST' }).then(r => r.json());
+      if (d.error) { showToast(d.error, 'error'); return; }
+      pintarContador(card.querySelector('.feed-repost-n'), d.reposts);
+      repostBtn.classList.toggle('activo', d.reposteado);
+      repostBtn.title = d.reposteado ? 'Quitar reposteo' : 'Repostear';
+      showToast(d.reposteado ? 'Reposteado' : 'Reposteo quitado');
+    } catch {}
+    repostBtn.disabled = false;
   });
 
   // Guardar
@@ -157,6 +221,9 @@ function renderPost(a) {
 
   // Comentarios inline (Instagram)
   card.querySelector('.feed-coment-btn').addEventListener('click', () => toggleComentarios(card, a));
+  // El contador de notas también abre los comentarios (como en la referencia,
+  // donde "123 notes" es el acceso a las interacciones del post).
+  card.querySelector('.feed-notas')?.addEventListener('click', () => toggleComentarios(card, a));
 }
 
 /* ── Compartir como historia (Instagram/Tumblr/Reddit) con marca de agua ──
@@ -327,7 +394,8 @@ function toggleComentarios(card, a) {
         inp.value = '';
         cargarComentarios(a.id, card);
         const n = card.querySelector('.feed-coment-n');
-        if (n) n.textContent = (parseInt(n.textContent) || 0) + 1;
+        if (n) pintarContador(n, (parseInt(n.dataset.n) || 0) + 1);
+        refrescarNotas(card);
       }
     } catch {}
   });

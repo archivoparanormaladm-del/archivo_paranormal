@@ -27,15 +27,21 @@ proyecto/
 
 ## PASO 1 — Instalar Python y dependencias
 
-```bash
-# Crear entorno virtual (recomendado)
+> Este proyecto corre en **Windows** con **Python 3.14**.
+
+```powershell
+# Crear entorno virtual (ya viene creado en .\venv)
 python -m venv venv
-source venv/bin/activate        # Mac/Linux
-venv\Scripts\activate           # Windows
+.\venv\Scripts\Activate.ps1
 
 # Instalar dependencias
-pip install -r requirements.txt
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
+
+> Las versiones de `psycopg2-binary` (2.9.12) y `Pillow` (12.3.0) estan fijadas porque son
+> las primeras que publican ruedas (`wheels`) para Python 3.14 en Windows. Las versiones
+> antiguas del setup de macOS (2.9.9 / 11.0.0) intentan compilarse desde el codigo fuente
+> y fallan.
 
 ---
 
@@ -51,7 +57,7 @@ GRANT ALL PRIVILEGES ON DATABASE paranormal_db TO mi_usuario;
 
 ### 2.2 Ejecutar el schema
 ```bash
-psql -U mi_usuario -d paranormal_db -f schema.sql
+psql -U postgres -d paranormal_db -f schema.sql
 ```
 
 Esto crea las tablas `usuarios` y `archivos`, más un usuario
@@ -69,8 +75,8 @@ administrador por defecto:
 
 ## PASO 3 — Configurar variables de entorno
 
-```bash
-cp .env.example .env
+```powershell
+Copy-Item .env.example .env
 ```
 
 Edita `.env`:
@@ -88,8 +94,8 @@ MAX_CONTENT_MB=50
 
 ## PASO 4 — Correr el servidor
 
-```bash
-python app.py
+```powershell
+.\venv\Scripts\python.exe app.py
 ```
 
 Abre tu navegador en: **http://localhost:5000**

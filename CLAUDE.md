@@ -8,19 +8,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-```bash
-# Setup
-python -m venv venv
-source venv/bin/activate        # Mac/Linux — venv/Scripts/activate on Windows
-pip install -r requirements.txt
-cp .env.example .env            # then fill in DB_* and SECRET_KEY
+This project runs on **Windows** (PowerShell). Paths below use Windows conventions.
 
-# Database (PostgreSQL must be running)
-psql -U <user> -d paranormal_db -f schema.sql
+```powershell
+# Setup (the venv is already created at .\venv — Python 3.14)
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
+Copy-Item .env.example .env     # then fill in DB_* and SECRET_KEY
+
+# Database (PostgreSQL must be running — this machine has 14, 16 and 18; .env uses 5432)
+psql -U postgres -d paranormal_db -f schema.sql
 
 # Run
-python app.py                   # serves on http://localhost:5000, debug=True
+.\venv\Scripts\python.exe app.py   # serves on http://localhost:5000, debug=True
 ```
+
+**Dependency pins are Python-3.14-specific.** `psycopg2-binary` and `Pillow` must stay at
+versions that publish cp314 Windows wheels (currently 2.9.12 and 12.3.0). The older pins from
+the macOS setup (2.9.9 / 11.0.0) have no cp314 wheel and fail to build from source on Windows.
 
 There are no tests, linter, or formatter configured in this repo.
 
@@ -32,7 +38,8 @@ There are no tests, linter, or formatter configured in this repo.
 
 **`schema.sql` is stale relative to `app.py`.** The code references columns and tables that do not exist in `schema.sql` (e.g. `usuarios.username`, `archivos.asunto`, `archivos.oculto`, `archivos.visitas_count`, plus whole tables `comentarios`, `reacciones`, `guardados`, `visitas`, `reportes`, `login_intentos`). Don't treat `schema.sql` as ground truth for the current DB shape — if you need to know the real schema, read the queries in `app.py`. If you add a column/table used by new code, update `schema.sql` to match.
 
-**Auth & roles.** Session-cookie auth (Flask `session`, no JWT). Three `perfil` levels drive both backend gating and frontend UI:
+**Auth & roles.** Session-cookie auth (Flask `session`, no JWT). Four `perfil` levels drive both backend gating and frontend UI:
+- `0` Super Administrador — everything; only a super admin can create/edit other perfil-0/1 users (`es_super_admin()`, `app.py`)
 - `1` Administrador — full access, moderation, user management
 - `2` Estándar — can upload (subject to `puede_subir` flag and admin approval)
 - `3` Restringido — read-only
@@ -46,7 +53,7 @@ There are no tests, linter, or formatter configured in this repo.
 4. Reject (`/api/admin/rechazar/<id>`) deletes the file from aduana and sets `estado='rechazado'`.
 5. Approved files are served publicly only through `/api/archivo/<nombre_guardado>`, which checks `estado='aprobado'` before calling `send_from_directory` — never construct direct paths into `uploads/aprobados/`.
 
-**Categories are hardcoded in two places** and must stay in sync: `CATEGORIAS` in `app.py` (also used to pre-create `uploads/aprobados/<cat>/` dirs on startup) and the `CATEGORIAS` array duplicated in `static/dashboard.js` and `static/admin.js`.
+**Categories live in the DB.** The `categorias` table is the source of truth — the admin panel creates/deletes them at runtime. `CATEGORIAS_SEED` in `app.py` only seeds that table on first startup, and `static/dashboard.js` fetches `/api/categorias` (its hardcoded array is a fallback for when that fetch fails). Don't add a category by editing the constants.
 
 **"Modo Incognito" category** is special-cased: the uploader's username is stripped from API responses for files in that category (see `archivos_por_categoria` and `mis_guardados` in `app.py`).
 

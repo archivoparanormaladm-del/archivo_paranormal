@@ -180,3 +180,40 @@
 
 /* ══ MODO CLARO ══ */
 :root[data-modo="claro"] .pub-thumb { background: #e4e4e7; }
+
+/* ── Publicaciones del perfil ──
+   Una galería es UNA tarjeta: la rejilla del photoset va dentro, y una
+   pastilla dice cuántas piezas trae. */
+.pp-medio { position: relative; }
+.pp-piezas {
+  position: absolute; right: 10px; bottom: 10px; z-index: 3;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 999px;
+  background: rgba(0,0,0,.66); color: #fff;
+  font-size: 11.5px; font-weight: 600;
+  pointer-events: none;
+}
+
+/* La descripción se recorta a tres líneas: aquí se viene a reconocer la
+   publicación, no a leerla entera. Completa está al abrirla. */
+.pp-desc {
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Sangrado del texto de la tarjeta ──
+   El medio va a sangre, pero el texto y los botones no: el asunto ya
+   traía 16px y el resto salía pegado al borde de la tarjeta. Se igualan
+   todos al mismo margen, y la tarjeta cierra con aire abajo. */
+.pp-card .pp-desc      { padding: 0 16px; }
+.pp-card .pp-meta-row  { margin: 10px 16px 0; padding-top: 10px; }
+.pp-card .pub-acciones { padding: 0 16px 16px; margin-top: 12px; }
+
+/* Sin botones (perfil de otro usuario) el cierre lo pone la fila de datos. */
+.pp-card .pp-meta-row:last-child { margin-bottom: 16px; }
+
+@media (max-width: 480px) {
+  .pp-card .pp-desc      { padding: 0 13px; }
+  .pp-card .pp-meta-row  { margin-left: 13px; margin-right: 13px; }
+  .pp-card .pub-acciones { padding: 0 13px 13px; }
+}

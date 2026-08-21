@@ -2,21 +2,40 @@
 
 .outlook-layout {
   display: flex;
+  gap: 16px;
   height: calc(100vh - 56px);
+  padding: 16px;
   overflow: hidden;
 }
 
-/* Panel izquierdo */
+/* ══════════════════════════════════════════════════════════
+   TARJETAS LIQUID GLASS
+   Los dos paneles y cada bloque del detalle dejan de ser
+   superficies planas separadas por líneas: ahora son tarjetas
+   que flotan sobre el fondo, con vidrio esmerilado, borde de
+   luz superior y sombra en capas.
+   ══════════════════════════════════════════════════════════ */
+
+/* Panel izquierdo — tarjeta contenedora de la lista */
 .panel-lista {
-  width: 300px; min-width: 240px;
-  border-right: 1px solid var(--border);
+  width: 306px; min-width: 246px;
   display: flex; flex-direction: column;
   overflow: hidden; flex-shrink: 0;
-  background: #0e0e0e;
+  border-radius: 22px;
+  background:
+    radial-gradient(120% 60% at 50% 0%, var(--glass-tint) 0%, transparent 62%),
+    color-mix(in srgb, var(--bg-1) 82%, transparent);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-bd);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.16),
+    0 8px 20px rgba(0,0,0,.20),
+    0 22px 48px rgba(0,0,0,.26),
+    inset 0 1px 0 var(--glass-hi);
 }
 .lista-header {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
+  padding: 14px 18px 12px;
   flex-shrink: 0;
 }
 .lista-count {
@@ -31,68 +50,88 @@
 #lista-items::-webkit-scrollbar { width: 4px; }
 #lista-items::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 2px; }
 
+/* ══════════════════════════════════════════════════════════
+   LISTA DE PUBLICACIONES (panel izquierdo)
+   Patrón de la referencia: miniatura 16:9 con distintivo, título
+   a dos líneas y una línea de datos con el tipo en color de acento.
+   ══════════════════════════════════════════════════════════ */
 .lista-item {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  cursor: pointer; display: flex; flex-direction: row; align-items: center; gap: 12px;
-  transition: background .12s;
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 10px; margin: 0 8px 4px;
+  border-radius: 14px; cursor: pointer;
+  border: 1px solid transparent;
+  transition: background .15s, border-color .15s;
 }
-.lista-item:hover  { background: var(--bg-2); }
+.lista-item:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
 .lista-item.activo {
-  /* Resaltado adaptable a claro/oscuro y al color de tema (tinte del acento) */
-  background: rgba(230, 53, 53, .12);                       /* respaldo */
-  background: color-mix(in srgb, var(--red) 16%, transparent);
-  border-left: 3px solid var(--red);
-  padding-left: 13px;
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--red) 45%, transparent);
 }
-.lista-item.activo .item-asunto { color: var(--text); font-weight: 600; }
-.lista-item.activo .item-usuario { color: var(--red); }
+.lista-item.activo .m-title { color: var(--red); }
 
-/* Miniatura de previsualización (esquinas redondeadas) */
-.item-thumb {
-  width: 64px; height: 64px; flex-shrink: 0;
-  border-radius: 14px; overflow: hidden; position: relative;
+/* ── Miniatura ── */
+.thumb {
+  position: relative; flex-shrink: 0;
+  width: 132px; aspect-ratio: 16 / 9;
+  border-radius: 10px; overflow: hidden;
   background: var(--bg-3);
-  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--glass-bd);
 }
-.item-thumb img, .item-thumb video { width: 100%; height: 100%; object-fit: cover; }
-.item-thumb .thumb-ph { color: var(--text-3); }
-.item-thumb .thumb-play {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  color: #fff; background: rgba(0,0,0,.25);
-}
-.item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.thumb img, .thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb .thumb-ph { display: none; }
 
-.item-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.item-usuario {
-  font-size: 12px; font-weight: 600; color: var(--red);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  display: inline-flex; align-items: center; min-width: 0;
+/* Galería o lista: se insinúa una segunda tarjeta detrás */
+.thumb.apilada {
+  box-shadow: 4px -4px 0 -1px var(--bg-3), 4px -4px 0 0 var(--glass-bd);
 }
-.item-fecha { font-size: 11px; color: var(--text-3); white-space: nowrap; }
-.item-asunto {
-  font-size: 13px; font-weight: 500; color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+
+/* Icono del tipo, centrado sobre la miniatura */
+.thumb-tipo {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: #fff; pointer-events: none;
 }
-.item-asunto.sin-asunto { color: var(--text-3); font-style: italic; font-weight: 400; }
-.item-bottom { display: flex; align-items: center; gap: 6px; }
-.item-tipo {
-  font-size: 10px; font-weight: 600; padding: 2px 6px;
-  background: var(--accent-soft); color: var(--red);
-  border: 1px solid var(--accent-soft-bd); text-transform: uppercase;
-  border-radius: 20px; letter-spacing: .3px;
+.thumb-tipo svg {
+  width: 24px; height: 24px;
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,.65));
 }
-.item-nombre {
-  font-size: 11px; color: var(--text-3);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+
+/* Distintivo de cantidad, abajo a la derecha */
+.thumb-badge {
+  position: absolute; right: 5px; bottom: 5px;
+  display: inline-flex; align-items: center; gap: 3px;
+  background: rgba(0,0,0,.72); color: #fff;
+  font-size: 10.5px; font-weight: 600;
+  padding: 2px 6px; border-radius: 5px;
 }
+.thumb-badge svg { width: 11px; height: 11px; }
+
+/* ── Texto del elemento ── */
+.item-meta { flex: 1; min-width: 0; }
+.m-title {
+  font-size: 13.5px; font-weight: 600; line-height: 1.35; color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.m-title.sin-asunto { color: var(--text-3); font-style: italic; font-weight: 400; }
+.m-sub {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
+  font-size: 11.5px; color: var(--text-3); margin-top: 5px; line-height: 1.4;
+}
+.m-sub .kind {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--red); font-weight: 600;
+}
+.m-sub .kind svg { width: 12px; height: 12px; }
+.m-sub .sep { opacity: .5; }
 
 .lista-vacia { padding: 40px 16px; text-align: center; color: var(--text-3); font-size: 13px; }
 
 /* Panel derecho */
 .panel-detalle {
   flex: 1; overflow-y: auto; display: flex; flex-direction: column;
-  background: var(--bg);
+  background: transparent;
+  padding-right: 4px;
   scrollbar-width: thin; scrollbar-color: var(--bg-3) transparent;
 }
 .panel-detalle::-webkit-scrollbar { width: 5px; }
@@ -105,27 +144,41 @@
 }
 .vacio-icon { font-size: 3rem; opacity: .4; }
 .detalle-vacio p { font-size: 13px; color: var(--text-3); }
-.detalle-contenido { display: flex; flex-direction: column; flex: 1; }
-
-.detalle-header {
-  padding: 4px 28px 18px;
-  border-bottom: 1px solid var(--border); flex-shrink: 0;
+/* Tarjeta principal: media arriba a sangre + su información debajo.
+   El resplandor superior del acento imita el borde iluminado de la
+   referencia y ata esta vista al neón del grid de categorías. */
+.detalle-contenido {
+  display: flex; flex-direction: column;
+  flex: 0 0 auto;
+  border-radius: 22px;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 42% at 50% 0%, var(--glass-tint) 0%, transparent 60%),
+    color-mix(in srgb, var(--bg-1) 86%, transparent);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-bd);
+  box-shadow:
+    0 -6px 30px -12px color-mix(in srgb, var(--red) 60%, transparent),
+    0 1px 2px rgba(0,0,0,.16),
+    0 10px 24px rgba(0,0,0,.22),
+    0 26px 56px rgba(0,0,0,.28),
+    inset 0 1px 0 var(--glass-hi);
 }
-.detalle-asunto {
-  font-size: 18px; font-weight: 700; color: var(--text);
-  margin-bottom: 10px; word-break: break-word; line-height: 1.4;
-}
-.detalle-asunto.sin-asunto { color: var(--text-3); font-style: italic; font-size: 15px; font-weight: 400; }
 
-.detalle-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.meta-user  { font-size: 13px; font-weight: 600; color: var(--red); display: inline-flex; align-items: center; }
+
+
+
+
+
+
 
 /* Avatar del autor junto al @usuario */
 .autor-avatar {
   width: 18px; height: 18px; border-radius: 50%; object-fit: cover;
   margin-right: 5px; flex-shrink: 0; vertical-align: middle;
 }
-.meta-user .autor-avatar { width: 20px; height: 20px; }
+
 .autor-avatar-ph {
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--accent-soft); color: var(--red);
@@ -142,10 +195,13 @@
 .detalle-media {
   background: #0a0a0a; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  min-height: 200px; max-height: 55vh; position: relative; overflow: hidden;
-  margin: 18px 28px; border-radius: 18px;
+  position: relative; overflow: hidden;
+  /* A sangre contra el borde superior de la tarjeta */
+  margin: 0; border-radius: 21px 21px 0 0;
+  border-bottom: 1px solid var(--glass-bd);
 }
-.detalle-media img  { max-width: 100%; max-height: 55vh; object-fit: contain; display: block; }
+/* El tamaño lo fijan las reglas compartidas de shared.css, para que la
+   categoría y el feed traten las imágenes y vídeos exactamente igual. */
 
 /* Relleno "ambient": versión desenfocada del propio contenido detrás,
    para que no queden barras negras con formatos verticales/panorámicos */
@@ -156,7 +212,6 @@
   transform: scale(1.2);
 }
 .detalle-media img.media-main { position: relative; z-index: 1; }
-.detalle-media video { max-width: 100%; max-height: 55vh; display: block; }
 .detalle-media audio { width: 100%; max-width: 500px; padding: 30px 20px; }
 .detalle-media .audio-bg {
   width: 100%; display: flex; flex-direction: column;
@@ -174,7 +229,10 @@
 }
 .btn-fs-detalle:hover { background: var(--red-2); color: #fff; border-color: var(--red-2); }
 
-.detalle-body { padding: 24px 28px 40px; }
+.detalle-body {
+  padding: 18px 26px 24px;
+  border-top: 1px solid var(--glass-bd);
+}
 .detalle-nombre-label {
   font-size: 11px; font-weight: 600; color: var(--text-3);
   letter-spacing: .5px; margin-bottom: 4px; text-transform: uppercase;
@@ -192,33 +250,29 @@
 .cargando-lista { padding: 24px 16px; color: var(--text-3); font-size: 13px; }
 
 /* ── Acciones (like, guardar, compartir) ── */
-.detalle-acciones {
-  display: flex; gap: 8px; padding: 14px 28px;
-  border-bottom: 1px solid var(--border); flex-wrap: wrap;
-}
-.acc-btn {
-  font-family: inherit; font-size: 13px; font-weight: 500;
-  color: var(--text-2); background: var(--bg-2);
-  border: 1px solid var(--border); border-radius: 7px;
-  padding: 7px 14px; cursor: pointer;
-  display: flex; align-items: center; gap: 6px;
-  transition: all .15s;
-}
-.acc-btn:hover { color: var(--text); border-color: var(--bg-3); background: var(--bg-3); }
-.acc-btn-activo { color: var(--red) !important; border-color: var(--red-2) !important; background: var(--accent-soft) !important; }
+
+
+
+
+
 
 /* ── Comentarios ── */
 .comentarios-section {
-  padding: 20px 28px 32px;
-  border-top: 1px solid var(--border);
+  padding: 20px 26px 26px;
+  border-top: 1px solid var(--glass-bd);
+  /* Fondo ligeramente hundido: separa los comentarios del contenido
+     sin necesidad de sacarlos a una tarjeta aparte. */
+  background: color-mix(in srgb, var(--bg) 26%, transparent);
 }
 .comentarios-section .detalle-desc-label { margin-bottom: 14px; }
 
 #lista-comentarios { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
 
 .comentario-item {
-  background: var(--bg-1); border: 1px solid var(--border);
-  border-radius: 8px; padding: 12px 14px;
+  background: color-mix(in srgb, var(--bg-2) 62%, transparent);
+  border: 1px solid var(--glass-bd);
+  border-radius: 14px; padding: 12px 14px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.10), inset 0 1px 0 rgba(255,255,255,.05);
 }
 .com-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
 .com-autor  { font-size: 12px; font-weight: 600; color: var(--red); }
@@ -261,7 +315,7 @@
 
 /* ══ REPRODUCTOR LIQUID GLASS (video / audio) ══ */
 .glass-player { position: relative; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.glass-player .gp-media { width: 100%; max-height: 55vh; display: block; }
+.glass-player .gp-media { width: 100%; display: block; }
 .glass-player video.gp-media { object-fit: contain; cursor: pointer; position: relative; z-index: 1; }
 /* Fondo desenfocado del video (ambient fill) */
 .glass-player video.gp-blur {
@@ -273,17 +327,33 @@
 
 /* Barra de controles (vidrio esmerilado) */
 .gp-bar {
-  display: flex; flex-direction: column; gap: 8px;
-  padding: 10px 14px; border-radius: 16px;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 5px 10px 6px; border-radius: 13px;
   background: color-mix(in srgb, var(--bg-1) 48%, transparent);
   backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-bd);
-  box-shadow: 0 10px 30px rgba(0,0,0,.3), inset 0 1px 0 var(--glass-hi);
+  box-shadow: 0 6px 18px rgba(0,0,0,.22), inset 0 1px 0 var(--glass-hi);
 }
 /* En video: la barra flota sobre la imagen, siempre oscura con iconos claros */
 .glass-player:not(.gp-is-audio) .gp-bar {
-  position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 3;
-  background: rgba(22,22,28,.42);
+  position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 3;
+  background: rgba(18,18,24,.38);
+  /* Desvanecido lento al ocultarse por inactividad */
+  opacity: 1; transform: translateY(0);
+  transition: opacity .75s ease, transform .75s ease;
+}
+/* Oculta tras 3 s sin actividad: además de invisible, deja de captar
+   clics para que el toque llegue al vídeo y la vuelva a mostrar. */
+.glass-player.gp-oculto:not(.gp-is-audio) .gp-bar {
+  opacity: 0; transform: translateY(10px);
+  pointer-events: none;
+}
+/* Sobre el vídeo, el cursor indica que se puede pulsar para revelarla */
+.glass-player:not(.gp-is-audio) { cursor: default; }
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-player:not(.gp-is-audio) .gp-bar { transition: opacity .2s linear; transform: none; }
+  .glass-player.gp-oculto:not(.gp-is-audio) .gp-bar { transform: none; }
 }
 .glass-player:not(.gp-is-audio) .gp-btn,
 .glass-player:not(.gp-is-audio) .gp-time,
@@ -301,43 +371,50 @@
 }
 .gp-is-audio .gp-bar { width: 100%; max-width: 560px; margin: 0 auto 10px; }
 
-.gp-controls { display: flex; align-items: center; gap: 12px; }
-.gp-vol-wrap { display: flex; align-items: center; gap: 7px; width: 120px; flex-shrink: 0; }
-.gp-transport { display: flex; align-items: center; gap: 14px; margin: 0 auto; }
+.gp-controls { display: flex; align-items: center; gap: 8px; }
+.gp-vol-wrap { display: flex; align-items: center; gap: 6px; width: 96px; flex-shrink: 0; }
+.gp-transport { display: flex; align-items: center; gap: 10px; margin: 0 auto; }
 .gp-extra { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
 .gp-btn {
   background: none; border: none; color: var(--text); cursor: pointer;
-  padding: 4px; display: flex; align-items: center; justify-content: center;
-  border-radius: 8px; transition: color .15s, transform .1s;
+  padding: 3px; display: flex; align-items: center; justify-content: center;
+  border-radius: 7px; transition: color .15s, transform .1s;
 }
 .gp-btn:hover { color: var(--red); }
 .gp-btn:active { transform: scale(.88); }
-.gp-play-main { width: 40px; height: 40px; }
+.gp-play-main { width: 32px; height: 32px; }
 .gp-speed { gap: 4px; font-size: 11px; }
 .gp-speed-lbl { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-.gp-timeline { display: flex; align-items: center; gap: 10px; }
-.gp-time { font-size: 11px; color: var(--text-2); font-variant-numeric: tabular-nums; min-width: 36px; }
+.gp-timeline { display: flex; align-items: center; gap: 8px; }
+/* Escritorio: actual · barra · duración. El envoltorio se disuelve para
+   que los tres sigan siendo hijos del flex y conserven su orden. */
+.gp-tiempo            { display: contents; }
+.gp-timeline .gp-cur  { order: 1; }
+.gp-timeline .gp-sep  { display: none; }
+.gp-timeline .gp-seek { order: 2; }
+.gp-timeline .gp-dur  { order: 3; }
+.gp-time { font-size: 10.5px; color: var(--text-2); font-variant-numeric: tabular-nums; min-width: 36px; }
 .gp-time.gp-dur { text-align: right; }
 .gp-seek { flex: 1; }
 
 /* Sliders (progreso y volumen) con relleno de acento */
 .gp-range {
-  -webkit-appearance: none; appearance: none; height: 5px; border-radius: 5px; cursor: pointer; outline: none;
+  -webkit-appearance: none; appearance: none; height: 3.5px; border-radius: 4px; cursor: pointer; outline: none;
   background: linear-gradient(to right,
     var(--red) 0%, var(--red) var(--pct, 0%),
     color-mix(in srgb, currentColor 22%, transparent) var(--pct, 0%),
     color-mix(in srgb, currentColor 22%, transparent) 100%);
 }
-.gp-vol { height: 4px; }
+.gp-vol { height: 3px; }
 .gp-range::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%;
-  background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,.5); cursor: pointer;
+  -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.45); cursor: pointer;
 }
 .gp-range::-moz-range-thumb {
-  width: 13px; height: 13px; border: none; border-radius: 50%;
-  background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,.5); cursor: pointer;
+  width: 10px; height: 10px; border: none; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.45); cursor: pointer;
 }
 
 @media (max-width: 560px) {
@@ -346,35 +423,1356 @@
   .gp-transport { gap: 10px; }
 }
 
-/* ══ MODO CLARO (overrides de fondos oscuros hardcodeados) ══ */
-:root[data-modo="claro"] .panel-lista { background: #ffffff; }
-:root[data-modo="claro"] .detalle-media  { background: #e4e4e7; }
-:root[data-modo="claro"] .btn-fs-detalle { background: rgba(255,255,255,.85); color: var(--text-2); }
-
-/* ══ RESPONSIVE CARPETA ══ */
-@media (max-width: 768px) {
-  .outlook-layout { flex-direction: column; height: auto; }
-  .panel-lista { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid var(--border); max-height: 280px; }
-  .panel-detalle { min-height: 60vh; }
-  .detalle-header { padding: 14px 16px 12px; }
-  .detalle-asunto { font-size: 15px; }
-  .detalle-body { padding: 16px 16px 30px; }
-  .detalle-acciones { padding: 10px 16px; }
-  .comentarios-section { padding: 14px 16px 24px; }
+/* ══ MODO CLARO ══
+   Sobre fondo blanco las sombras oscuras ensucian: se aclaran y el
+   vidrio se vuelve casi opaco para que el texto siga legible. */
+:root[data-modo="claro"] .panel-lista,
+:root[data-modo="claro"] .detalle-contenido {
+  background: rgba(255,255,255,.86);
+  border-color: rgba(0,0,0,.07);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.05),
+    0 8px 20px rgba(0,0,0,.07),
+    0 22px 48px rgba(0,0,0,.09),
+    inset 0 1px 0 rgba(255,255,255,.95);
 }
+:root[data-modo="claro"] .detalle-contenido {
+  box-shadow:
+    0 -6px 30px -12px color-mix(in srgb, var(--red) 35%, transparent),
+    0 1px 2px rgba(0,0,0,.05),
+    0 10px 24px rgba(0,0,0,.07),
+    0 26px 56px rgba(0,0,0,.10),
+    inset 0 1px 0 rgba(255,255,255,.95);
+}
+:root[data-modo="claro"] .lista-item        { background: rgba(0,0,0,.025); }
+:root[data-modo="claro"] .lista-item:hover  { background: rgba(0,0,0,.05); box-shadow: 0 4px 12px rgba(0,0,0,.07); }
+:root[data-modo="claro"] .comentarios-section { background: rgba(0,0,0,.022); }
+:root[data-modo="claro"] .comentario-item   { background: rgba(0,0,0,.03); }
+
+
+:root[data-modo="claro"] .detalle-media     { background: #e4e4e7; }
+:root[data-modo="claro"] .btn-fs-detalle    { background: rgba(255,255,255,.85); color: var(--text-2); }
+
 
 /* ══ RESPONSIVE CARPETA ══ */
 @media (max-width: 768px) {
-  .outlook-layout { flex-direction: column; height: auto; }
-  .panel-lista { width: 100%; border-right: none; border-bottom: 1px solid var(--border); max-height: 280px; }
-  .panel-detalle { min-height: 60vh; }
-  .detalle-header { padding: 16px; }
-  .detalle-body { padding: 16px 16px 32px; }
-  .detalle-acciones { padding: 12px 16px; gap: 6px; }
-  .acc-btn { font-size: 12px; padding: 6px 10px; }
-  .comentarios-section { padding: 16px 16px 24px; }
+  /* ══ MÓVIL: la publicación arriba, el resto debajo ══
+     En escritorio son dos paneles lado a lado. En móvil se sigue el patrón
+     de la referencia: primero la publicación abierta con el reproductor
+     anclado arriba, y debajo la lista como "A continuación". Se invierte
+     el orden con flex `order`, sin tocar el HTML. */
+  .outlook-layout {
+    flex-direction: column; height: auto;
+    padding: 10px; gap: 12px;
+    overflow: visible;               /* que la página entera haga scroll */
+  }
+  /* `display: contents` disuelve los contenedores: sus hijos pasan a ser
+     hijos directos del layout. Así el medio ancla respecto a TODA la
+     página —incluida la lista de abajo— y no sólo dentro de su tarjeta,
+     que es el comportamiento de la referencia. De paso, la columna queda
+     plana en vez de encerrada en una tarjeta, como en el mockup. */
+  .panel-detalle,
+  .detalle-contenido { display: contents; }
+  /* `display: contents` ganaría a `.hidden`: hay que reafirmarlo. */
+  .panel-detalle.hidden,
+  .detalle-contenido.hidden { display: none; }
+  .panel-lista {
+    order: 2;
+    width: 100%; min-width: unset; max-height: none;
+    border-radius: 18px;
+    overflow: visible;
+  }
+  #lista-items { overflow: visible; }
+
+  /* El medio queda anclado arriba al desplazar, como en la referencia.
+     56 px es el alto de la barra superior.
+
+     `position: sticky` no funciona si un ancestro recorta el desbordamiento,
+     y la tarjeta usa `overflow: hidden` para redondear las esquinas del
+     medio. En móvil se libera el recorte y el redondeo lo aplica cada
+     bloque por su cuenta. */
+  .detalle-contenido { overflow: visible; }
+
+  .detalle-media,
+  .detalle-contenido > .feed-photoset,
+  .detalle-contenido > .audio-post {
+    position: sticky; top: 56px; z-index: 15;
+    border-radius: 17px 17px 0 0;
+    overflow: hidden;              /* recorta su propio contenido */
+  }
+
+
+  /* Sin la tarjeta contenedora, cada bloque pone su propio fondo. */
+  .vinfo, .chrow, .detalle-body, .comentarios-section {
+    background: color-mix(in srgb, var(--bg-1) 86%, transparent);
+    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border-left: 1px solid var(--glass-bd);
+    border-right: 1px solid var(--glass-bd);
+  }
+  .comentarios-section {
+    border-bottom: 1px solid var(--glass-bd);
+    border-radius: 0 0 17px 17px;
+  }
+  .detalle-vacio { order: 1; }
+  /* La cabecera de la lista pasa a ser el rótulo "A continuación" */
+  .lista-header { padding: 14px 16px 8px; }
+  .lista-count  { font-size: 13px; font-weight: 700; color: var(--text-2); letter-spacing: 0; }
+  .detalle-contenido { border-radius: 18px; }
+  .detalle-media   { border-radius: 17px 17px 0 0; }
+  .detalle-header  { padding: 16px 16px 12px; }
+  .vtitle          { font-size: 15.5px; }
+  .detalle-acciones{ padding: 0 16px 14px; gap: 6px; }
+  .detalle-body    { padding: 14px 16px 20px; }
+  .comentarios-section { padding: 16px 16px 22px; }
+
 }
 @media (max-width: 480px) {
-  .detalle-asunto { font-size: 15px; }
-  .acc-btn span { display: none; }
+  .outlook-layout { padding: 10px; gap: 10px; }
+  .vtitle { font-size: 15.5px; }
+  .act-n { display: none; }
+  .lista-item     { margin: 0 8px 6px; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   FORMATOS DE PUBLICACIÓN DENTRO DE LA CATEGORÍA
+   El detalle usa los mismos formatos que el feed (galería en
+   rejilla, audio 540×169, texto sin medio). El contenido se
+   ciñe a la columna de 540 px de la especificación, centrada
+   en el panel; la navegación por lista no cambia.
+   ══════════════════════════════════════════════════════════ */
+.detalle-contenido {
+  max-width: 542px;      /* 540 de contenido + 1 px de borde a cada lado */
+  width: 100%;
+  margin: 0 auto;
+  align-self: center;
+}
+
+/* Galería de fotos: misma rejilla y canal que en el feed */
+.detalle-contenido .feed-photoset {
+  border-radius: 21px 21px 0 0;
+  overflow: hidden;
+  border-bottom: 1px solid var(--glass-bd);
+}
+
+/* Publicación de audio: carátula 169 y lista de pistas */
+.detalle-contenido .audio-post .ap-cabecera { border-radius: 21px 21px 0 0; overflow: hidden; }
+
+/* Publicación de texto: el título gana peso, igual que en el feed */
+.detalle-contenido.es-texto .detalle-header { padding: 22px 26px 14px; }
+.detalle-contenido.es-texto .vtitle {
+  font-size: 25px; line-height: 1.25; color: var(--red); letter-spacing: -.2px;
+}
+.detalle-contenido.es-texto .detalle-desc { font-size: 15px; line-height: 1.72; white-space: pre-wrap; }
+
+/* Pastillas de la lista izquierda para galerías y listas */
+
+
+
+/* Esto es disposición, no presentación: en móvil la publicación ocupa todo
+   el ancho; en escritorio conserva su columna acotada. */
+@media (max-width: 768px) {
+  .detalle-contenido { max-width: 100%; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   DETALLE DE LA PUBLICACIÓN
+   Estructura de la referencia: título + línea de datos, fila de
+   autor con acciones redondas, y la descripción completa en una
+   hoja aparte que se abre desde "…más".
+   ══════════════════════════════════════════════════════════ */
+.vinfo { padding: 16px 20px 4px; }
+.vtitle {
+  font-size: 17px; font-weight: 600; line-height: 1.3;
+  color: var(--text); word-break: break-word;
+}
+.vtitle.sin-asunto { color: var(--text-3); font-style: italic; font-weight: 400; font-size: 15px; }
+
+.metaline {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 5px;
+  font-size: 12.5px; color: var(--text-3); margin-top: 7px; line-height: 1.4;
+}
+.metaline .sep { opacity: .5; }
+.metaline .meta-tipo { text-transform: uppercase; letter-spacing: .4px; }
+.metaline .mas {
+  background: none; border: none; padding: 0 0 0 3px;
+  font-family: inherit; font-size: 12.5px; font-weight: 700;
+  color: var(--red); cursor: pointer;
+}
+.metaline .mas:hover { text-decoration: underline; }
+
+/* ── Fila de autor + acciones ── */
+.chrow {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 14px 20px;
+}
+.chleft { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ch-avatar { display: inline-flex; flex-shrink: 0; }
+.ch-avatar .autor-avatar { width: 34px; height: 34px; margin: 0; }
+.ch-nombre {
+  font-size: 13.5px; font-weight: 600; color: var(--red);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.acts { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.act {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  min-width: 38px; height: 38px; padding: 0 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-2) 70%, transparent);
+  border: 1px solid var(--glass-bd);
+  color: var(--text-2); cursor: pointer;
+  font-family: inherit; font-size: 12.5px; font-weight: 600;
+  transition: color .15s, border-color .15s, background .15s, transform .12s;
+}
+.act:has(> svg:only-child) { padding: 0; width: 38px; }
+.act svg { width: 18px; height: 18px; flex-shrink: 0; }
+.act:hover {
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 45%, transparent);
+  transform: translateY(-1px);
+}
+.act:active { transform: translateY(0) scale(.94); }
+/* Estado activo: el icono se rellena, como en la referencia */
+.act.acc-btn-activo {
+  color: var(--red);
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--red) 50%, transparent);
+  box-shadow: 0 0 14px -3px var(--red-glow);
+}
+.act.acc-btn-activo svg { fill: currentColor; }
+.act-n { font-variant-numeric: tabular-nums; }
+
+/* ══ Hoja de descripción ══ */
+.hoja-fondo {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,.5);
+  opacity: 0; transition: opacity .24s;
+}
+.hoja-fondo.visible { opacity: 1; }
+
+.hoja {
+  position: fixed; z-index: 310;
+  display: flex; flex-direction: column;
+  background:
+    radial-gradient(120% 40% at 50% 0%, var(--glass-tint) 0%, transparent 60%),
+    color-mix(in srgb, var(--bg-1) 96%, transparent);
+  backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-bd);
+  box-shadow: 0 -12px 48px rgba(0,0,0,.45), inset 0 1px 0 var(--glass-hi);
+  transition: transform .26s cubic-bezier(.2,.8,.2,1);
+}
+/* Escritorio: panel lateral que entra desde la derecha */
+@media (min-width: 769px) {
+  .hoja {
+    top: 0; right: 0; bottom: 0; width: min(420px, 92vw);
+    border-radius: 22px 0 0 22px;
+    transform: translateX(100%);
+  }
+  .hoja.visible { transform: translateX(0); }
+  .hoja-grip { display: none; }
+}
+/* Móvil: hoja que sube desde abajo */
+@media (max-width: 768px) {
+  .hoja {
+    left: 0; right: 0; bottom: 0; max-height: 84vh;
+    border-radius: 20px 20px 0 0;
+    transform: translateY(100%);
+  }
+  .hoja.visible { transform: translateY(0); }
+}
+.hoja-grip {
+  width: 40px; height: 4px; border-radius: 2px;
+  background: var(--glass-bd); margin: 9px auto 0; flex-shrink: 0;
+}
+.hoja-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px; border-bottom: 1px solid var(--glass-bd); flex-shrink: 0;
+}
+.hoja-t { font-size: 16px; font-weight: 700; color: var(--text); }
+.hoja-x {
+  background: none; border: none; cursor: pointer; padding: 4px;
+  color: var(--text-2); display: inline-flex; border-radius: 8px;
+}
+.hoja-x:hover { color: var(--red); background: var(--bg-2); }
+.hoja-x svg { width: 20px; height: 20px; }
+.hoja-body { overflow-y: auto; padding: 18px; }
+.hoja-titulo { font-size: 15.5px; font-weight: 600; line-height: 1.35; color: var(--text); }
+
+.hoja-stats { display: flex; gap: 10px; margin: 18px 0; }
+.hoja-stats .stat {
+  flex: 1; min-width: 0; text-align: center; padding: 13px 6px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-2) 55%, transparent);
+  border: 1px solid var(--glass-bd);
+}
+.hoja-stats .v {
+  display: block; font-size: 16px; font-weight: 700; color: var(--red);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hoja-stats .l { display: block; font-size: 11px; color: var(--text-3); margin-top: 3px; }
+
+.hoja-desc {
+  font-size: 14px; line-height: 1.7; color: var(--text);
+  padding: 15px; border-radius: 12px; white-space: pre-wrap; word-break: break-word;
+  background: color-mix(in srgb, var(--bg-2) 55%, transparent);
+  border: 1px solid var(--glass-bd);
+}
+.hoja-desc a { color: var(--red); text-decoration: underline; }
+.hoja-pie { font-size: 11.5px; color: var(--text-3); margin-top: 14px; }
+
+:root[data-modo="claro"] .hoja { background: rgba(255,255,255,.97); }
+:root[data-modo="claro"] .hoja-stats .stat,
+:root[data-modo="claro"] .hoja-desc { background: rgba(0,0,0,.025); }
+
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */
+  .vinfo { padding: 14px 16px 4px; }
+  .chrow { padding: 12px 16px; }
+  .act    { min-width: 36px; height: 36px; }
+  .act:has(> svg:only-child) { width: 36px; }
+  .thumb  { width: 112px; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   REPRODUCTOR TIPO YOUTUBE (en toda la app)
+   Sin acotar a propósito: el feed y el perfil usan el mismo marcado
+   de reproductor y deben verse igual que dentro de la categoría.
+   Los controles dejan de ser una barra flotante abajo y se
+   reparten sobre el vídeo: transporte al centro, ajustes
+   arriba a la derecha, tiempo abajo a la izquierda, pantalla
+   completa abajo a la derecha y la barra de progreso al ras
+   del borde inferior.
+
+   Sólo cambia la disposición: el marcado y los manejadores son
+   los mismos, así que velocidad, saltos de 10 s, progreso y
+   pantalla completa siguen funcionando igual.
+   ══════════════════════════════════════════════════════════ */
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */
+  .glass-player:not(.gp-is-audio) .gp-bar {
+    position: absolute; inset: 0;
+    left: 0; right: 0; bottom: 0;
+    display: block; padding: 0;
+    border: none; border-radius: 0;
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+    box-shadow: none;
+    /* Velos arriba y abajo para que los iconos blancos se lean
+       sobre cualquier fotograma. */
+    background:
+      linear-gradient(rgba(0,0,0,.55), transparent 38%),
+      linear-gradient(transparent 58%, rgba(0,0,0,.6));
+  }
+
+  /* Los contenedores se disuelven para poder colocar cada control. */
+  .glass-player:not(.gp-is-audio) .gp-controls,
+  .glass-player:not(.gp-is-audio) .gp-extra,
+  .glass-player:not(.gp-is-audio) .gp-timeline { display: contents; }
+
+  /* El volumen se gestiona con el botón físico del teléfono. */
+  .glass-player:not(.gp-is-audio) .gp-vol-wrap { display: none; }
+
+  /* ── Transporte al centro ── */
+  .glass-player:not(.gp-is-audio) .gp-transport {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex; align-items: center; gap: 30px; margin: 0;
+  }
+  .glass-player:not(.gp-is-audio) .gp-transport .gp-btn {
+    width: 46px; height: 46px; border-radius: 50%; padding: 0;
+    background: rgba(0,0,0,.38);
+    backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  }
+  .glass-player:not(.gp-is-audio) .gp-transport .gp-play-main {
+    width: 62px; height: 62px; background: rgba(0,0,0,.46);
+  }
+  .glass-player:not(.gp-is-audio) .gp-transport .gp-btn svg { width: 24px; height: 24px; }
+  .glass-player:not(.gp-is-audio) .gp-transport .gp-play-main svg { width: 30px; height: 30px; }
+
+  /* ── Velocidad arriba a la derecha ── */
+  .glass-player:not(.gp-is-audio) .gp-speed {
+    position: absolute; top: 10px; right: 12px;
+    display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px;
+  }
+
+  /* ── Tiempo abajo a la izquierda, como pastilla ──
+     Se arma con flex sobre el envoltorio: así "0:08 / 1:00:02" crece solo
+     y no hay que ajustar posiciones para cada duración. */
+  .glass-player:not(.gp-is-audio) .gp-tiempo {
+    position: absolute; left: 12px; bottom: 14px; z-index: 4;
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 8px; border-radius: 6px;
+    background: rgba(0,0,0,.55);
+    font-size: 12px; font-weight: 600; color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+  .glass-player:not(.gp-is-audio) .gp-tiempo .gp-time {
+    color: #fff; min-width: 0; font-size: 12px;
+  }
+  .glass-player:not(.gp-is-audio) .gp-sep { display: inline; opacity: .75; }
+  /* En escritorio los tiempos van a los lados de la barra y llevan `order`.
+     Aqui son hijos del envoltorio, asi que ese orden hay que anularlo o el
+     separador se adelanta y sale "/ 0:01 0:20". */
+  .glass-player:not(.gp-is-audio) .gp-tiempo > * { order: 0; }
+
+  /* ── Pantalla completa abajo a la derecha ── */
+  .glass-player:not(.gp-is-audio) .gp-fs {
+    position: absolute; right: 10px; bottom: 12px;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(0,0,0,.38);
+  }
+
+  /* ── Progreso al ras del borde inferior ── */
+  .glass-player:not(.gp-is-audio) .gp-seek {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    width: 100%; height: 3px; border-radius: 0;
+  }
+  .glass-player:not(.gp-is-audio) .gp-seek::-webkit-slider-thumb {
+    width: 12px; height: 12px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.35), 0 1px 4px rgba(0,0,0,.5);
+  }
+  .glass-player:not(.gp-is-audio) .gp-seek::-moz-range-thumb {
+    width: 12px; height: 12px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   AJUSTES DE MÓVIL — segunda pasada sobre la referencia
+   Van al final: `.detalle-media` y compañía se definen más
+   arriba y, con igual especificidad, gana la última regla.
+   ══════════════════════════════════════════════════════════ */
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */
+
+  /* ── 1. La descripción sale SOLO en la hoja de "…más" ──
+     Estaba dos veces: en línea bajo la ficha y en la hoja. */
+  .detalle-body .detalle-desc-label,
+  .detalle-body .detalle-desc { display: none; }
+  .detalle-body { padding-bottom: 14px; }
+
+  /* ── 2. Reproductor: marco redondeado con halo de neón ── */
+  .detalle-media,
+  .detalle-contenido > .feed-photoset,
+  .detalle-contenido > .ps-carrusel,
+  .detalle-contenido > .audio-post {
+    border-radius: 16px;
+    overflow: hidden;          /* las esquinas recortan el carrusel */
+    margin: 0 2px;
+    border: 1px solid color-mix(in srgb, var(--red) 45%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--red) 22%, transparent),
+      0 0 14px -2px var(--red-glow),
+      0 0 34px -6px var(--red-glow),
+      0 8px 22px rgba(0,0,0,.35);
+  }
+
+  /* La línea de tiempo sube: deja de ir pegada al borde inferior
+     y queda dentro del marco, como en la referencia. */
+  .glass-player:not(.gp-is-audio) .gp-seek {
+    left: 12px; right: 12px; bottom: 10px;
+    width: auto; height: 4px; border-radius: 3px;
+  }
+  /* El tiempo se coloca justo encima de la barra. */
+  .glass-player:not(.gp-is-audio) .gp-tiempo { bottom: 24px; }
+  .glass-player:not(.gp-is-audio) .gp-fs     { bottom: 22px; right: 12px; }
+
+  /* El velo inferior se recorta para no tapar las esquinas redondeadas */
+  .glass-player:not(.gp-is-audio) .gp-bar { border-radius: 15px; overflow: hidden; }
+
+  /* ── 3. Autor, Seguir y acciones ── */
+  .chrow { align-items: center; gap: 8px; padding: 12px 14px; }
+  .chleft { gap: 8px; flex: 0 1 auto; min-width: 0; }
+  .ch-nombre { display: none; }          /* el nombre ya sale en la línea de datos */
+
+  .ch-seguir {
+    height: 34px; padding: 0 16px; border-radius: 999px;
+    border: none; cursor: pointer; white-space: nowrap;
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    background: var(--red); color: #fff;
+    box-shadow: 0 0 14px -2px var(--red-glow);
+    transition: background .15s, color .15s, box-shadow .15s;
+  }
+  .ch-seguir.siguiendo {
+    background: transparent; color: var(--text-3);
+    border: 1px solid var(--glass-bd); box-shadow: none;
+  }
+  .ch-seguir:active { transform: scale(.96); }
+
+  /* Acciones: círculos limpios, sin contador visible */
+  .acts { gap: 6px; }
+  .act, .act:has(> svg:only-child) {
+    width: 36px; height: 36px; min-width: 36px; padding: 0;
+    background: transparent;
+  }
+  .act .act-n { display: none; }
+
+  /* ── 4. Comentarios como tarjeta con flecha ── */
+  .comentarios-section {
+    margin: 6px 10px 12px;
+    padding: 14px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--bg-2) 60%, transparent);
+    border: 1px solid var(--glass-bd);
+  }
+  .comentarios-section .detalle-desc-label { display: none; }
+
+  .com-cabecera {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; padding: 0; background: none; border: none;
+    cursor: pointer; font-family: inherit; color: var(--text);
+  }
+  .com-t { font-size: 15px; font-weight: 700; }
+  .com-n { font-size: 13px; font-weight: 400; color: var(--text-3); margin-left: 6px; }
+  .com-flecha { display: inline-flex; color: var(--text-3); transition: transform .2s; }
+  .com-flecha svg { width: 18px; height: 18px; }
+  .comentarios-section.plegada .com-flecha { transform: rotate(90deg); }
+
+  /* Plegada: solo la cabecera y el campo de comentar */
+  .comentarios-section.plegada #lista-comentarios { display: none; }
+
+  #lista-comentarios { margin-top: 12px; }
+  .comentario-form { margin-top: 12px; }
+  .comentario-form textarea {
+    border-radius: 999px; padding: 10px 16px; min-height: 40px; resize: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   MÓVIL · MEDIDAS DEL MEDIO EN LA VISTA DE CATEGORÍA
+   Marco 16:9 fijo para vídeo, imagen y GIF. El contenido se
+   ajusta con `contain`, así que NUNCA se deforma; el hueco que
+   sobra lo rellena una copia desenfocada del propio contenido.
+   Texto y audio quedan fuera: conservan su formato.
+   ══════════════════════════════════════════════════════════ */
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */
+
+  /* ── Vídeo e imagen sueltos ── */
+  .detalle-media {
+    aspect-ratio: 16 / 9;
+    max-height: none;          /* manda la proporción, no un tope */
+    min-height: 0;
+  }
+  .detalle-media img.media-main,
+  .detalle-media video.gp-media,
+  .detalle-media .glass-player {
+    width: 100%; height: 100%;
+    max-height: none;
+    object-fit: contain;       /* sin deformar */
+  }
+  .detalle-media .media-blur { display: block; }
+
+  /* El botón de ampliar, sobre la imagen */
+  .btn-fs-detalle {
+    right: 10px; bottom: 10px;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(0,0,0,.5); border: none; color: #fff;
+    backdrop-filter: blur(3px);
+  }
+
+  /* ── Galerías: carrusel deslizable ──
+     Deja de ser una rejilla: cada foto ocupa el ancho completo y se
+     pasa a la siguiente deslizando. `scroll-snap` hace que encaje
+     sola, sin necesidad de JavaScript. */
+  .detalle-contenido .feed-photoset {
+    display: flex; flex-direction: row;
+    gap: 0; background: none;
+    overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .detalle-contenido .feed-photoset::-webkit-scrollbar { display: none; }
+
+  /* Las filas de la rejilla se disuelven: todas las celdas en una tira */
+  .detalle-contenido .ps-fila { display: contents; }
+
+  .detalle-contenido .ps-fila[data-cols] .ps-celda {
+    position: relative;
+    flex: 0 0 100%; width: 100%;
+    aspect-ratio: 16 / 9;      /* fija, cualquiera sea la foto */
+    scroll-snap-align: center;
+    scroll-snap-stop: always;  /* una foto por gesto */
+    background: #0a0a0a;
+    overflow: hidden;
+  }
+  .detalle-contenido .ps-fila[data-cols] .ps-celda img {
+    position: relative; z-index: 1;
+    width: 100%; height: 100%;
+    object-fit: contain;       /* sin deformar ni recortar */
+  }
+
+  /* Relleno: el propio contenido, ampliado y desenfocado detrás */
+  .detalle-contenido .ps-blur {
+    display: block; position: absolute; inset: 0; z-index: 0;
+    background-size: cover; background-position: center;
+    filter: blur(38px) saturate(1.35) brightness(.72);
+    transform: scale(1.25);
+  }
+
+  /* Ampliar, en cada foto */
+  .detalle-contenido .ps-expandir {
+    display: grid; place-items: center;
+    position: absolute; right: 10px; bottom: 10px; z-index: 3;
+    width: 34px; height: 34px; padding: 0;
+    border: none; border-radius: 50%;
+    background: rgba(0,0,0,.5); color: #fff; cursor: pointer;
+    backdrop-filter: blur(3px);
+  }
+  .detalle-contenido .ps-expandir:active { transform: scale(.92); }
+
+  /* Marco del carrusel: referencia para el contador */
+  .ps-carrusel { position: relative; }
+  .ps-carrusel > .feed-photoset { margin: 0; border: none; box-shadow: none; }
+
+  /* Contador de posición: sin él no se adivina que hay más fotos */
+  .ps-contador {
+    position: absolute; top: 10px; right: 10px; z-index: 3;
+    padding: 3px 9px; border-radius: 999px;
+    background: rgba(0,0,0,.6); color: #fff;
+    font-size: 11.5px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   MÓVIL · DISPOSICIÓN DE LA REFERENCIA
+   Título, línea de datos, tira de acciones, tarjeta de
+   comentarios y lista "A continuación". Sólo cambia el móvil:
+   el escritorio conserva su panel de dos columnas.
+   ══════════════════════════════════════════════════════════ */
+
+/* Utilidades: piezas que sólo existen en una de las dos disposiciones.
+   Se ocultan desde el lado contrario para no pisar el `display` propio
+   de cada elemento (círculo, rejilla, flex…). */
+/* `.solo-movil` ya no se oculta: la vista compacta rige en todos los anchos. */
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */ .solo-esc   { display: none !important; } }
+
+/* Separador automático: cada unidad `.mi` pone su propio punto, así que
+   ocultar una unidad oculta también el punto que la precede. */
+.metaline .mi::before,
+.m-sub    .mi::before { content: '·'; opacity: .5; margin-right: 5px; }
+.metaline .mi:first-child::before { content: none; }
+/* En escritorio la primera unidad visible es "visualizaciones". */
+.metaline .meta-vistas::before { content: none; }
+
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */
+
+  /* En móvil sí lleva punto: la preceden el autor y los «Me gusta». */
+  .metaline .meta-vistas::before { content: '·'; }
+
+  /* ── Sin tarjeta: título y acciones van sobre el fondo de la página ── */
+  .vinfo, .chrow {
+    background: none; border: none;
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+
+  /* ── Título y línea de datos ── */
+  .vinfo   { padding: 14px 2px 0; }
+  .vtitle  { font-size: 17px; font-weight: 700; line-height: 1.28; letter-spacing: -.2px; }
+  .metaline { font-size: 12.5px; gap: 4px; margin-top: 7px; line-height: 1.45; }
+  .metaline .meta-autor { color: var(--red); font-weight: 700; }
+  .metaline .mas { color: var(--text); font-weight: 700; font-size: 12.5px; }
+
+  /* ── Acciones: una sola tira, deslizable si no cabe ── */
+  .chrow {
+    display: flex; align-items: center; justify-content: flex-start;
+    gap: 8px; padding: 14px 2px 12px;
+    overflow-x: auto; overflow-y: hidden;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .chrow::-webkit-scrollbar { display: none; }
+  /* Los dos grupos se disuelven para que todo quede en la misma línea. */
+  .chleft, .acts { display: contents; }
+
+  .ch-avatar { order: 1; }
+  .ch-avatar .autor-avatar { width: 38px; height: 38px; margin: 0; }
+  .ch-seguir     { order: 2; }
+  #btn-like      { order: 3; }
+  #btn-dislike   { order: 4; }
+  #btn-compartir { order: 5; }
+  #btn-guardar   { order: 6; }
+  #btn-mas-acc   { order: 7; }
+
+  /* Botón de seguir: pastilla con halo, como en la referencia */
+  .ch-seguir {
+    height: 38px; padding: 0 20px; border-radius: 999px;
+    border: none; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+    font-family: inherit; font-size: 14px; font-weight: 700;
+    background: var(--red); color: #fff;
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--red) 55%, transparent),
+      0 0 18px -2px var(--red-glow),
+      0 0 34px -6px var(--red-glow);
+  }
+  .ch-seguir.siguiendo {
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+    color: var(--text-2);
+    border: 1px solid var(--glass-bd); box-shadow: none;
+  }
+
+  /* Acciones redondas */
+  .act, .act:has(> svg:only-child) {
+    width: 38px; height: 38px; min-width: 38px; padding: 0;
+    border-radius: 50%; flex-shrink: 0;
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+    border: 1px solid var(--glass-bd);
+  }
+  .act svg { width: 19px; height: 19px; }
+  .act .act-n { display: none; }
+
+  /* ── La ficha del archivo sale sólo en la hoja de "…más" ── */
+  .detalle-body { display: none; }
+
+  /* ── Comentarios: tarjeta propia ── */
+  .comentarios-section {
+    margin: 4px 2px 6px; padding: 14px 14px 16px;
+    border: 1px solid var(--glass-bd); border-radius: 16px;
+    background: color-mix(in srgb, var(--bg-2) 55%, transparent);
+  }
+  .com-t { font-size: 15px; font-weight: 700; }
+  .com-n { margin-left: 8px; font-size: 14px; font-weight: 400; color: var(--text-3); }
+
+  .comentario-form {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 14px;
+  }
+  .cf-avatar { flex: 0 0 32px; display: inline-flex; }
+  .cf-avatar .autor-avatar { width: 32px; height: 32px; margin: 0; }
+  .comentario-form textarea {
+    flex: 1; min-width: 0; min-height: 40px; height: 40px;
+    padding: 10px 16px; border-radius: 999px; resize: none;
+  }
+  /* Nombre y botón de enviar sólo cuando se empieza a escribir */
+  .comentario-form #nombre-anon,
+  .comentario-form #btn-comentar { display: none; }
+  .comentario-form.activo { align-items: flex-start; }
+  .comentario-form.activo textarea { height: auto; min-height: 72px; border-radius: 18px; }
+  .comentario-form.activo #nombre-anon { display: block; flex: 1 0 100%; }
+  .comentario-form.activo #btn-comentar { display: inline-flex; margin-left: auto; }
+
+  /* ── "A continuación" ── */
+  .lista-header { padding: 16px 2px 8px; }
+  .lista-count  { font-size: 14px; font-weight: 600; color: var(--text-2); }
+
+  .lista-item {
+    gap: 12px; align-items: flex-start;
+    margin: 0 0 6px; padding: 6px 2px;
+    border: none; border-radius: 12px; background: none;
+  }
+  .lista-item:hover,
+  .lista-item.activo { background: none; border-color: transparent; }
+  .lista-item.activo .m-title { color: var(--red); }
+
+  /* Miniatura 16:9, proporcional al ancho del teléfono */
+  .thumb { width: 37%; min-width: 116px; max-width: 152px; border-radius: 10px; }
+  .thumb.apilada { box-shadow: none; }
+
+  .m-title { font-size: 14px; font-weight: 600; line-height: 1.32; }
+  .m-sub   { font-size: 12px; gap: 4px; margin-top: 5px; }
+
+  /* El "…" de cada fila, arriba a la derecha */
+  .item-mas {
+    flex: 0 0 24px; align-self: flex-start;
+    display: inline-grid; place-items: center;
+    width: 24px; height: 24px; margin-top: 2px; padding: 0;
+    background: none; border: none; cursor: pointer; color: var(--text-3);
+  }
+  .item-mas svg { width: 16px; height: 16px; }
+  .item-mas:active { transform: scale(.9); }
+}
+
+/* ── Correcciones tras contrastar con la referencia ── */
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */
+
+  /* La lista deja de ser una tarjeta: filas planas sobre el fondo. */
+  .panel-lista {
+    background: none; border: none; box-shadow: none;
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+    border-radius: 0;
+  }
+  /* El rótulo va en minúsculas, no como epígrafe */
+  .lista-count { text-transform: none; letter-spacing: 0; }
+
+  /* La caja de comentar es una fila (el estilo base la apila) */
+  .comentario-form { flex-direction: row; }
+  .comentario-form textarea { width: auto; }
+
+  /* Flecha: apunta a la derecha plegada y baja al desplegar */
+  .comentarios-section .com-flecha { transform: none; }
+  .comentarios-section.plegada .com-flecha { transform: none; }
+  .comentarios-section:not(.plegada) .com-flecha { transform: rotate(90deg); }
+
+  /* Hueco al final para que la barra flotante no tape la última fila */
+  .panel-lista { padding-bottom: 96px; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   MÓVIL · LA PUBLICACIÓN QUEDA FIJA
+   Medio, título, acciones y comentarios se anclan bajo la barra
+   superior; sólo la lista de "A continuación" se desplaza.
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* Antes se disolvía con `display: contents` para que sólo el medio se
+     anclase. Ahora se ancla el bloque entero, así que vuelve a ser una
+     caja real: es ella la que lleva el `sticky`. */
+  .detalle-contenido {
+    display: flex; flex-direction: column;
+    /* `--nav-h` lo publica carpeta.js con el alto real de la barra. */
+    position: sticky; top: calc(var(--nav-h, 56px) + 12px); z-index: 15;
+    max-width: none; align-self: stretch;
+    border: none; border-radius: 0; overflow: visible;
+  }
+
+  /* Superficie propia: sin ella la lista se vería pasar por detrás del
+     título y los comentarios. Casi opaca, con el desenfoque de la app,
+     para que los arcos del fondo sigan tiñendo. */
+  /* Fondo plano y sólido: el mismo color de la página, a sangre. Su único
+     cometido es tapar la lista cuando pasa por detrás del bloque anclado,
+     así que no lleva ni borde, ni sombra, ni desenfoque, ni redondeo: si se
+     notara alguno de los cuatro, se vería como un panel encima del fondo,
+     que es justo lo que sobraba. */
+  .detalle-contenido::before {
+    content: ''; position: absolute; z-index: -1;
+    top: -10px; bottom: -10px; left: -12px; right: -12px;
+    background: var(--bg);
+  }
+
+  /* La tarjeta base de `.detalle-contenido` volvió a pintarse al dejar de
+     ser `display: contents`. Aquí no la queremos: el bloque va sobre el
+     fondo, sin superficie propia. */
+  .detalle-contenido { background: none; box-shadow: none; }
+
+  /* El medio ya no necesita anclarse por su cuenta. */
+  .detalle-media,
+  .detalle-contenido > .feed-photoset,
+  .detalle-contenido > .ps-carrusel,
+  .detalle-contenido > .audio-post { position: relative; top: auto; z-index: auto; }
+
+  /* Si se despliegan los comentarios o se está escribiendo uno, el bloque
+     puede no caber en pantalla: entonces vuelve a desplazarse con la
+     página para que no quede nada fuera de alcance. */
+  .detalle-contenido:has(.comentarios-section:not(.plegada)),
+  .detalle-contenido:has(.comentario-form.activo) {
+    position: relative; top: auto;
+  }
+
+  /* La lista arranca despegada del bloque fijo. */
+  .panel-lista { margin-top: 8px; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   MÓVIL · ESCALA ÚNICA (referencia: YouTube en teléfono)
+   Antes cada pieza traía su propio tamaño y peso, y la mezcla
+   se veía desigual y apretada. Aquí se unifican tres cosas:
+
+     Tipografía  16/14/13/12 px, peso 500 para títulos y 400
+                 para datos. El 700 de antes es lo que hacía
+                 que todo pareciera grande y pesado.
+     Controles   34 px de alto (círculos, pastilla y avatar).
+     Espaciado   múltiplos de 4, y 12 px de margen lateral
+                 para todo, que es el que ya usaba el medio.
+   ══════════════════════════════════════════════════════════ */
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */
+
+  /* ── Título y datos ── */
+  .vinfo    { padding: 12px 2px 0; }
+  .vtitle   { font-size: 16px; font-weight: 500; line-height: 1.4; letter-spacing: 0; }
+  .metaline { font-size: 12px; margin-top: 6px; gap: 4px; }
+  .metaline .meta-autor { font-weight: 500; }
+  .metaline .mas        { font-size: 12px; font-weight: 500; }
+
+  /* ── Acciones: 34 px, como los chips de la referencia ── */
+  .chrow { padding: 12px 2px; gap: 8px; }
+  .ch-avatar .autor-avatar { width: 34px; height: 34px; }
+  .act, .act:has(> svg:only-child) { width: 34px; height: 34px; min-width: 34px; }
+  .act svg { width: 18px; height: 18px; }
+  .ch-seguir { height: 34px; padding: 0 16px; font-size: 14px; font-weight: 500; }
+
+  /* ── Comentarios ── */
+  .comentarios-section { margin: 8px 2px; padding: 12px; border-radius: 12px; }
+  .com-t   { font-size: 14px; font-weight: 500; }
+  .com-n   { font-size: 13px; margin-left: 6px; }
+  .com-flecha svg { width: 16px; height: 16px; }
+  .comentario-form { margin-top: 12px; gap: 10px; }
+  .cf-avatar { flex: 0 0 30px; }
+  .cf-avatar .autor-avatar { width: 30px; height: 30px; }
+  .comentario-form textarea { min-height: 36px; height: 36px; padding: 8px 14px; font-size: 13px; }
+
+  /* ── "A continuación" ── */
+  .lista-header { padding: 16px 2px 10px; }
+  .lista-count  { font-size: 14px; font-weight: 500; }
+
+  /* Más aire entre filas: era lo que más apretaba la lista */
+  .lista-item {
+    gap: 12px;
+    padding: 6px 8px; margin: 0 -6px 6px;   /* -6 + 8 = 2: misma alineacion */
+    border: 1px solid transparent;          /* reservado para la seleccion */
+    border-radius: 12px;
+  }
+
+  /* Miniatura al 41 % del ancho, la proporción de la referencia */
+  .thumb   { width: 41%; min-width: 124px; max-width: 168px; }
+  .m-title { font-size: 14px; font-weight: 500; line-height: 1.4; }
+  .m-sub   { font-size: 12px; margin-top: 4px; }
+  .m-sub .kind { font-weight: 500; }
+}
+
+/* Últimos valores sueltos: los distintivos sobre las miniaturas y el
+   contador del carrusel venían con tamaños propios (10,5 y 11,5 px, peso
+   600) que no encajaban con la escala. Pasan a 12/500 como el resto. */
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */
+  .thumb-badge { font-size: 12px; font-weight: 500; padding: 2px 6px; border-radius: 6px; }
+  .thumb-badge svg { width: 12px; height: 12px; }
+  .ps-contador { font-size: 12px; font-weight: 500; padding: 3px 8px; }
+  /* El avatar de la caja de comentar se alinea con los demás controles. */
+  .cf-avatar { flex: 0 0 32px; }
+  .cf-avatar .autor-avatar { width: 32px; height: 32px; }
+}
+
+/* ── Flecha de paso del carrusel (sólo móvil) ──
+   Al centro del borde derecho, como marcó la referencia. Gira 180° cuando
+   se llega a la última foto para volver hacia atrás. */
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */
+  .ps-nav {
+    position: absolute; z-index: 4;
+    right: 8px; top: 50%;
+    display: grid; place-items: center;
+    width: 34px; height: 34px; padding: 0;
+    border: none; border-radius: 50%;
+    background: rgba(0,0,0,.5); color: #fff; cursor: pointer;
+    backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+    /* El giro y el centrado viven en la misma propiedad: hay que
+       repetir el `translateY` en el estado girado. */
+    transform: translateY(-50%);
+    transition: transform .25s ease, background .15s;
+  }
+  .ps-nav svg { width: 20px; height: 20px; }
+  .ps-nav.atras { transform: translateY(-50%) rotate(180deg); }
+  .ps-nav:active { background: rgba(0,0,0,.72); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ps-nav { transition: background .15s; }
+}
+
+/* ── Fondo liso en el interior de la categoría (móvil) ──
+   El patrón de arcos del tema tiñe el fondo y hace que el bloque anclado
+   parezca un panel recortado sobre él. Aquí se apaga para que quede un
+   color sólido y plano, como en la referencia. `.outlook-layout` sólo
+   existe en carpeta.html, así que el resto de páginas lo conservan. */
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */
+  body:has(.outlook-layout)::before { display: none; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   MÓVIL · FONDO CONTINUO, TAMBIÉN EN MODO CLARO
+   El bloque de la publicación y la lista no deben tener
+   superficie propia: el fondo tiene que ser uno solo de
+   arriba abajo. Las reglas de modo claro llevan el selector
+   `:root[data-modo="claro"]`, que pesa más que un `.clase`
+   suelta, así que hay que repetirlo aquí o siguen pintando
+   sus tarjetas blancas y el fondo se ve partido.
+   ══════════════════════════════════════════════════════════ */
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */
+
+  .detalle-contenido,
+  :root[data-modo="claro"] .detalle-contenido {
+    background: none; box-shadow: none; border: none;
+  }
+
+  .panel-lista,
+  :root[data-modo="claro"] .panel-lista {
+    background: none; box-shadow: none; border: none;
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+
+  .lista-item,
+  :root[data-modo="claro"] .lista-item,
+  .lista-item:hover,
+  :root[data-modo="claro"] .lista-item:hover {
+    background: none; box-shadow: none; border-color: transparent;
+  }
+
+  /* La tarjeta de comentarios sí conserva superficie: es la única. */
+  :root[data-modo="claro"] .comentarios-section {
+    background: color-mix(in srgb, var(--bg-2) 55%, transparent);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   MÓVIL · FILA SELECCIONADA EN "A CONTINUACIÓN"
+   Marca cuál de la lista es la publicación que se está viendo
+   arriba. Va después del reseteo de fondos y repite el
+   selector de modo claro, que pesa más que una clase suelta.
+   Es una pastilla del ancho de la fila, no una superficie a
+   sangre: no vuelve a partir el fondo.
+   ══════════════════════════════════════════════════════════ */
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */
+
+  .lista-item.activo,
+  :root[data-modo="claro"] .lista-item.activo {
+    background: var(--accent-soft);
+    border-color: color-mix(in srgb, var(--red) 38%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--red) 14%, transparent),
+      0 0 16px -6px var(--red-glow);
+  }
+  .lista-item.activo .m-title { color: var(--red); }
+  .lista-item.activo .thumb {
+    border-color: color-mix(in srgb, var(--red) 45%, transparent);
+  }
+
+  /* Con ratón, aviso al pasar por encima. En táctil `hover` se queda
+     pegado tras el toque, así que se limita a los punteros reales. */
+  @media (hover: hover) {
+    .lista-item:hover,
+    :root[data-modo="claro"] .lista-item:hover {
+      background: color-mix(in srgb, var(--text) 6%, transparent);
+    }
+    .lista-item.activo:hover,
+    :root[data-modo="claro"] .lista-item.activo:hover {
+      background: var(--accent-soft);
+    }
+  }
+
+  /* Respuesta al toque */
+  .lista-item { transition: background .15s, border-color .15s, box-shadow .15s, transform .12s; }
+  .lista-item:active { transform: scale(.985); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lista-item { transition: none; }
+  .lista-item:active { transform: none; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   MÓVIL · DESVANECIDO AL PIE DEL BLOQUE FIJO
+   La superficie que tapa la lista terminaba en un canto recto,
+   y las filas que pasaban por debajo se veían cortadas de golpe.
+   Aquí se prolonga con un degradado que las va apagando, y ese
+   degradado "respira": alarga y acorta su alcance muy despacio,
+   así el borde nunca se lee como una línea fija.
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  .detalle-contenido::after {
+    content: ''; position: absolute; z-index: -1;
+    /* Arranca justo donde acaba la superficie (su `bottom` es -10px). */
+    top: calc(100% + 10px);
+    left: -12px; right: -12px;
+    height: 40px;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      var(--bg) 0%,
+      color-mix(in srgb, var(--bg) 72%, transparent) 38%,
+      color-mix(in srgb, var(--bg) 30%, transparent) 70%,
+      color-mix(in srgb, var(--bg) 0%,  transparent) 100%);
+    /* Crece desde arriba: el arranque queda siempre pegado a la
+       superficie y opaco, pase lo que pase con la animación. */
+    transform-origin: top center;
+    animation: respirar-borde 6s ease-in-out infinite;
+  }
+
+  /* Desplegado el bloque deja de estar anclado y ya no pasa nada por
+     debajo: el degradado sobraría sobre la lista. */
+  .detalle-contenido:has(.comentarios-section:not(.plegada))::after,
+  .detalle-contenido:has(.comentario-form.activo)::after { display: none; }
+}
+
+/* Sólo se mueve la longitud del desvanecido, nunca su opacidad: bajarla
+   dejaría ver otra vez el canto recto en la parte de arriba. */
+@keyframes respirar-borde {
+  0%, 100% { transform: scaleY(1); }
+  50%      { transform: scaleY(1.45); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detalle-contenido::after { animation: none; transform: scaleY(1.2); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   MÓVIL · FILA DEL AUTOR
+   El nombre pasa a la derecha del avatar (sale de la línea de
+   datos para no repetirlo) y las acciones se empujan al borde
+   derecho de la fila.
+   ══════════════════════════════════════════════════════════ */
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */
+
+  /* El nombre vuelve a la fila; se recorta si no cabe, para que las
+     acciones no queden empujadas fuera de la pantalla. */
+  .ch-nombre {
+    display: inline-block;
+    font-size: 14px; font-weight: 500; color: var(--text);
+    max-width: 42vw; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  /* Y desaparece de la línea de datos. Al ocultarse deja de haber una
+     primera unidad visible con su punto suprimido, así que ese papel
+     pasa a los «Me gusta». */
+  .metaline .meta-autor  { display: none !important; }
+  .metaline .meta-likes::before { content: none; }
+
+  /* Los dos grupos dejan de disolverse: al ser cajas de nuevo, un margen
+     automático separa las acciones y las lleva al borde derecho. */
+  .chrow  { justify-content: space-between; }
+  /* `0 0 auto`: el grupo del autor no se encoge. Con `0 1 auto`, en una
+     pantalla estrecha y con la pastilla "Seguir" presente, el nombre se
+     comprimía a 5 px y desaparecía. Si no cabe todo, la fila desliza
+     —conserva `overflow-x: auto`— en vez de aplastar el nombre. */
+  .chleft { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 0 0 auto; }
+  .acts   { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; margin-left: auto; }
+
+  /* Dentro del grupo izquierdo manda el marcado (avatar, nombre, seguir):
+     los `order` que hacían falta con `display: contents` ya sobran. */
+  .ch-avatar, .ch-nombre, .ch-seguir { order: 0; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   MÓVIL · NEÓN EN EL NOMBRE Y EN "COMENTARIOS"
+   El resplandor se arma con `text-shadow` en dos radios: uno
+   corto que define el filo y otro amplio que lo difunde, ambos
+   derivados de `--red`, así sigue al tema activo.
+   ══════════════════════════════════════════════════════════ */
+@media all {   /* antes sólo móvil; la presentación compacta se aplica ya en todos los anchos */
+
+  .ch-nombre {
+    color: var(--red);
+    text-shadow:
+      0 0 6px  color-mix(in srgb, var(--red) 55%, transparent),
+      0 0 16px color-mix(in srgb, var(--red) 34%, transparent);
+  }
+
+  .com-t {
+    text-shadow:
+      0 0 6px  color-mix(in srgb, var(--red) 45%, transparent),
+      0 0 18px color-mix(in srgb, var(--red) 26%, transparent);
+  }
+
+  /* Sobre fondo claro un halo amplio ensucia el texto en vez de
+     iluminarlo: se deja sólo el radio corto y más contenido. */
+  :root[data-modo="claro"] .ch-nombre {
+    text-shadow: 0 0 7px color-mix(in srgb, var(--red) 32%, transparent);
+  }
+  :root[data-modo="claro"] .com-t {
+    text-shadow: 0 0 7px color-mix(in srgb, var(--red) 22%, transparent);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   ESCRITORIO · AJUSTES DE LA VISTA COMPACTA
+   La presentación es la misma que en móvil; aquí sólo se
+   acomoda a dos columnas: la publicación en una columna de
+   ancho acotado (si ocupara los 1000 px del panel, el marco
+   16:9 se iría a 600 px de alto) y la lista algo más ancha,
+   que con 306 px el texto de cada fila quedaba en 128 px.
+   ══════════════════════════════════════════════════════════ */
+@media (min-width: 769px) {
+
+  /* Proporciones de YouTube en escritorio: la publicación se queda con el
+     grueso del ancho y la lista pasa a barra lateral estrecha (allí son
+     ~71 % y ~28 %). El tope de 1280 px es para pantallas muy anchas: sin
+     él, el marco 16:9 crecería sin freno. */
+  .detalle-contenido {
+    max-width: 1400px; width: 100%; margin: 0 auto; align-self: center;
+  }
+
+  /* 28 % es la proporción de la referencia; el `clamp` evita que en un
+     portátil estrecho se coma la columna principal y que en un monitor
+     ancho se estire de más. */
+  .panel-lista {
+    width: clamp(300px, 28%, 520px);
+    min-width: 300px; flex-shrink: 0;
+  }
+  /* Miniatura de la barra lateral, como las 168x94 de la referencia. */
+  .thumb { width: 42%; min-width: 120px; max-width: 168px; }
+
+  /* Las filas dejan de sobresalir: con `margin: 0 -6px` el contenido medía
+     6 px más que el contenedor y a la lista le salía una barra de
+     desplazamiento horizontal. En móvil no pasaba porque allí
+     `#lista-items` no recorta. */
+  .lista-item   { margin-left: 0; margin-right: 0; }
+  .lista-header { padding-left: 8px; padding-right: 8px; }
+
+  /* El hueco de 96 px era para la barra flotante del teléfono. */
+  .panel-lista { padding-bottom: 0; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   NEÓN EN LA BARRA DEL REPRODUCTOR
+   Se aplica en las tres páginas que cargan este archivo: inicio,
+   categoría y perfil. La barra es un `input[type=range]` cuyo
+   relleno es un degradado hasta `--pct`, así que el halo va sobre
+   el elemento —queda como una línea encendida— y el tirador lleva
+   el suyo, más concentrado, para marcar dónde va la reproducción.
+   ══════════════════════════════════════════════════════════ */
+@keyframes neon-barra {
+  0%, 100% { box-shadow: 0 0 5px  color-mix(in srgb, var(--red) 45%, transparent),
+                         0 0 11px color-mix(in srgb, var(--red) 22%, transparent); }
+  50%      { box-shadow: 0 0 9px  color-mix(in srgb, var(--red) 80%, transparent),
+                         0 0 20px color-mix(in srgb, var(--red) 48%, transparent),
+                         0 0 32px color-mix(in srgb, var(--red) 24%, transparent); }
+}
+@keyframes neon-seguir {
+  0%, 100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--red) 55%, transparent),
+                         0 0 14px color-mix(in srgb, var(--red) 40%, transparent),
+                         0 0 28px color-mix(in srgb, var(--red) 20%, transparent); }
+  50%      { box-shadow: 0 0 0 1px color-mix(in srgb, var(--red) 70%, transparent),
+                         0 0 20px color-mix(in srgb, var(--red) 70%, transparent),
+                         0 0 40px color-mix(in srgb, var(--red) 38%, transparent); }
+}
+
+:root[data-modo="oscuro"] .gp-seek {
+  animation: neon-barra 3.4s ease-in-out infinite;
+}
+:root[data-modo="oscuro"] .gp-seek::-webkit-slider-thumb {
+  box-shadow: 0 1px 4px rgba(0,0,0,.45),
+              0 0 8px  color-mix(in srgb, var(--red) 85%, transparent),
+              0 0 16px color-mix(in srgb, var(--red) 55%, transparent);
+}
+:root[data-modo="oscuro"] .gp-seek::-moz-range-thumb {
+  box-shadow: 0 1px 4px rgba(0,0,0,.45),
+              0 0 8px  color-mix(in srgb, var(--red) 85%, transparent),
+              0 0 16px color-mix(in srgb, var(--red) 55%, transparent);
+}
+/* Mientras se arrastra, sin latido: el halo fijo ayuda a apuntar. */
+:root[data-modo="oscuro"] .gp-seek:active,
+:root[data-modo="oscuro"] .gp-seek:hover {
+  animation: none;
+  box-shadow: 0 0 9px  color-mix(in srgb, var(--red) 85%, transparent),
+              0 0 20px color-mix(in srgb, var(--red) 52%, transparent);
+}
+
+/* El botón de seguir ya tenía halo fijo; ahora respira. */
+:root[data-modo="oscuro"] .ch-seguir:not(.siguiendo) {
+  animation: neon-seguir 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-modo="oscuro"] .gp-seek,
+  :root[data-modo="oscuro"] .ch-seguir:not(.siguiendo) { animation: none; }
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   MÓVIL · TODO AL 90 %
+   En vez de recortar piezas sueltas —que descuadraba el diseño—
+   se reduce la vista entera. `zoom` afecta a la maquetación, así
+   que todo encoge en proporción y la lista gana sitio sin que
+   nada cambie de forma. `transform: scale()` no serviría: no
+   recalcula el hueco y dejaría un vacío al pie.
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* El ancho se fija en unidades de pantalla: sin esto el contenedor
+     crece en unidades escaladas y el medio, que va a ancho completo,
+     acababa midiendo lo mismo que sin zoom. */
+  .outlook-layout { zoom: .9; width: 100vw; margin-inline: auto; }
+
+  /* El anclaje se mide en píxeles reales (la barra superior está fuera
+     del contenedor con zoom), así que hay que dividirlo por el factor
+     para que siga cayendo donde toca. */
+  .detalle-contenido {
+    top: calc((var(--nav-h, 56px) + 12px) / .9);
+  }
+
+}
+
+/* ══════════════════════════════════════════════════════════
+   MÓVIL · PUBLICACIONES DE TEXTO
+   En las demás, la descripción vive en la hoja de "…más" y la
+   ficha del archivo se oculta. Pero en una publicación de texto
+   no hay medio: el texto ES el contenido, y ocultarlo dejaba la
+   publicación en blanco. Se muestra entero, como en el inicio.
+   ══════════════════════════════════════════════════════════ */
+/* El cuerpo del texto se muestra en TODOS los anchos: la regla que oculta
+   la descripción también es universal, así que acotar esto a móvil dejaba
+   la publicación en blanco en escritorio. */
+.detalle-contenido.es-texto .detalle-body { display: block; }
+.detalle-contenido.es-texto .detalle-body .detalle-desc { display: block; }
+
+/* Sin fichero que nombrar ni rótulo que anteceda al cuerpo. */
+.detalle-contenido.es-texto .detalle-nombre-label,
+.detalle-contenido.es-texto .detalle-nombre-val,
+.detalle-contenido.es-texto .detalle-desc-label { display: none; }
+
+/* Y "…más" sobra: ya está todo a la vista. */
+.detalle-contenido.es-texto .metaline .mas { display: none; }
+
+@media (max-width: 768px) {
+  .detalle-contenido.es-texto .detalle-body { padding: 4px 2px 16px; }
+
+  /* Un texto largo puede ser más alto que la pantalla, y anclado dejaría
+     el final fuera de alcance. Estas publicaciones se desplazan enteras. */
+  .detalle-contenido.es-texto { position: relative; top: auto; }
+  .detalle-contenido.es-texto::before,
+  .detalle-contenido.es-texto::after { display: none; }
+}
+
+/* ── Texto recortado al alto del reproductor ── */
+.detalle-contenido.es-texto .detalle-desc.recortado {
+  position: relative;
+  overflow: hidden;
+}
+/* Degradado al pie: sin él el corte parece el final del texto.
+   `--fade` es el color de lo que hay detrás, que difiere por modo. */
+.detalle-contenido.es-texto .detalle-desc.recortado::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0;
+  height: 64px; pointer-events: none;
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--fade, var(--bg-1)) 0%, transparent),
+    var(--fade, var(--bg-1)));
+}
+/* En móvil el bloque va sobre el fondo plano de la página; en escritorio,
+   sobre la tarjeta del detalle. */
+@media (max-width: 768px) { .detalle-contenido.es-texto { --fade: var(--bg); } }
+
+.txt-mas {
+  display: inline-flex; align-items: center;
+  margin-top: 10px; padding: 6px 14px;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  color: var(--red); cursor: pointer;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-soft-bd);
+  border-radius: 999px;
+  transition: filter .15s;
+}
+.txt-mas:hover  { filter: brightness(1.12); }
+.txt-mas:active { transform: scale(.97); }
+
+/* ══════════════════════════════════════════════════════════
+   ICONO DE TIPO SOBRE LA MINIATURA
+   Toma el color del tema y respira, como el resto del neón.
+   La sombra oscura se conserva bajo el halo: el icono va sobre
+   una foto cualquiera y sin ella se perdería en los fondos
+   claros — el color solo no basta para separarlo.
+   ══════════════════════════════════════════════════════════ */
+@keyframes respirar-icono-tipo {
+  0%, 100% { filter: drop-shadow(0 1px 4px rgba(0,0,0,.7))
+                     drop-shadow(0 0 4px  color-mix(in srgb, var(--red) 60%, transparent))
+                     drop-shadow(0 0 10px color-mix(in srgb, var(--red) 35%, transparent)); }
+  50%      { filter: drop-shadow(0 1px 4px rgba(0,0,0,.7))
+                     drop-shadow(0 0 7px  color-mix(in srgb, var(--red) 90%, transparent))
+                     drop-shadow(0 0 18px color-mix(in srgb, var(--red) 60%, transparent))
+                     drop-shadow(0 0 30px color-mix(in srgb, var(--red) 30%, transparent)); }
+}
+
+.thumb-tipo { color: var(--red); }
+.thumb-tipo svg {
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,.7))
+          drop-shadow(0 0 5px  color-mix(in srgb, var(--red) 70%, transparent))
+          drop-shadow(0 0 14px color-mix(in srgb, var(--red) 40%, transparent));
+  animation: respirar-icono-tipo 3s ease-in-out infinite;
+}
+
+/* La fila seleccionada late algo más rápido, para distinguirse. */
+.lista-item.activo .thumb-tipo svg { animation-duration: 2.2s; }
+
+/* Modo Incógnito no delata el color del tema en ningún sitio; aquí
+   tampoco: su icono se queda en blanco con halo neutro. */
+.lista-item .thumb-tipo svg.incognito,
+.thumb-tipo.incognito svg {
+  color: #e6e6ea;
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,.7))
+          drop-shadow(0 0 5px rgba(220,220,230,.7));
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thumb-tipo svg { animation: none; }
 }

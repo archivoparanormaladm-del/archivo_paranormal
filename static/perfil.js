@@ -230,9 +230,34 @@ document.querySelectorAll('.perfil-tab').forEach(tab => {
     document.querySelectorAll('.perfil-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.perfil-content').forEach(c => c.classList.add('hidden'));
     tab.classList.add('active');
-    document.getElementById(`tab-${tab.dataset.tab}`)?.classList.remove('hidden');
+    const panel = document.getElementById(`tab-${tab.dataset.tab}`);
+    panel?.classList.remove('hidden');
+    // Se carga la primera vez que se abre; volver a entrar no repite la
+    // petición ni borra lo ya pintado.
+    if (panel && !panel.dataset.cargado) {
+      panel.dataset.cargado = '1';
+      if (tab.dataset.tab === 'reposts') cargarLista('/api/usuario/reposts', 'lista-reposts', 'Todavía no has reposteado nada.');
+      if (tab.dataset.tab === 'likes')   cargarLista('/api/usuario/likes',   'lista-likes',   'Todavía no has dado me gusta a ninguna publicación.');
+    }
   });
 });
+
+/* ── Lista de publicaciones de otros (reposteadas, con me gusta) ──
+   Usa la misma tarjeta que "Mis publicaciones", sin botones de edición:
+   son de otras personas y aquí sólo se consultan. */
+async function cargarLista(url, contenedorId, vacio) {
+  const wrap = document.getElementById(contenedorId);
+  if (!wrap) return;
+  let data;
+  try { data = await fetch(url).then(r => r.json()); }
+  catch { wrap.innerHTML = '<p class="vacio-txt">No se pudo cargar.</p>'; return; }
+  if (!Array.isArray(data) || !data.length) {
+    wrap.innerHTML = `<p class="vacio-txt">${vacio}</p>`;
+    return;
+  }
+  wrap.innerHTML = '';
+  data.forEach(a => wrap.appendChild(pubCard(a, false)));
+}
 
 /* ── Media de una publicación en el perfil ── */
 function mediaPerfil(a) {
@@ -255,10 +280,29 @@ function pubCard(a, editable) {
   card.className = 'feed-card pp-card';
   card.dataset.id = a.id;
   const link = `/carpeta.html?cat=${encodeURIComponent(a.categoria)}&archivo=${a.id}`;
+
+  // Una galería es UNA publicación: sus fotos van en la rejilla del
+  // photoset, no como tarjetas sueltas. Si aún no está aprobada se pinta
+  // el marcador de estado, porque no hay archivo público que mostrar.
+  const piezas = (a.imagenes || []).length;
+  const esGaleria = piezas > 1 && a.estado === 'aprobado';
+  const bloqueMedio = esGaleria
+    ? photosetHtml(a)
+    : `<div class="feed-media${a.aspecto && a.estado === 'aprobado' ? ' con-encuadre' : ''}"
+            ${a.aspecto && a.estado === 'aprobado' ? `style="aspect-ratio:${a.aspecto.replace(':','/')};--encuadre:${a.encuadre || '50% 50%'}"` : ''}
+       >${mediaPerfil(a)}</div>`;
+
+  // La descripción se recorta: en el perfil interesa reconocer la
+  // publicación de un vistazo, no leerla entera.
+  const desc = (a.descripcion || '').replace(/</g, '&lt;');
+
   card.innerHTML = `
-    <div class="feed-media">${mediaPerfil(a)}${editable && a.estado ? estadoBadge(a.estado) : ''}</div>
+    <div class="pp-medio">${bloqueMedio}
+      ${editable && a.estado ? estadoBadge(a.estado) : ''}
+      ${piezas > 1 ? `<span class="pp-piezas">${piezas} ${a.tipo === 'audio' ? 'pistas' : 'fotos'}</span>` : ''}
+    </div>
     <p class="feed-asunto">${(a.asunto || 'Sin asunto').replace(/</g, '&lt;')}</p>
-    ${a.descripcion ? `<p class="feed-desc">${(a.descripcion || '').replace(/</g, '&lt;')}</p>` : ''}
+    ${desc ? `<p class="feed-desc pp-desc">${desc}</p>` : ''}
     <div class="pp-meta-row">
       <a class="feed-cat" href="/carpeta.html?cat=${encodeURIComponent(a.categoria)}">${a.categoria}</a>
       <span class="pp-fecha">${a.fecha}</span>
@@ -271,6 +315,7 @@ function pubCard(a, editable) {
     </div>` : ''}
   `;
   if (typeof activarReproductor === 'function') activarReproductor(card);
+  if (typeof activarLista === 'function') activarLista(card);
   if (editable) {
     card.querySelector('.pub-btn-editar').addEventListener('click', () => editarPublicacion(a));
     card.querySelector('.pub-btn-eliminar').addEventListener('click', async () => {

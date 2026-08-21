@@ -1,4 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* La fuente se carga con <link> en el <head> de cada página, no con
+   @import: un @import obliga al navegador a descargar y parsear este
+   archivo ANTES de descubrir la fuente, encadenando las descargas en
+   serie en vez de lanzarlas en paralelo. */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -53,20 +56,76 @@
 /* En claro, atenuar el ruido VHS para que no ensucie el fondo blanco */
 :root[data-modo="claro"] .vhs-overlay { opacity: .12; }
 
-body {
+/* El color de fondo vive en <html> para que el patrón de <body::before>
+   pueda quedar por encima con z-index negativo sin taparse a sí mismo. */
+html {
   background: var(--bg);
+  transition: background .2s;
+}
+
+body {
+  background: transparent;
   color: var(--text);
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 14px;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  transition: background .2s, color .2s;
+  transition: color .2s;
+}
+
+/* ══════════════════════════════════════════════════════════
+   FONDO — arcos concéntricos
+   Se dibuja con gradientes radiales en vez de una imagen fija
+   para que tome el color del tema activo (los 8) y se atenúe
+   solo en modo claro. Los radios van en `vmax`, así que la
+   escala acompaña al viewport en móvil, tableta y escritorio.
+   ══════════════════════════════════════════════════════════ */
+:root {
+  --arco-1: color-mix(in srgb, var(--red)  22%, transparent);
+  --arco-2: color-mix(in srgb, var(--text) 10%, transparent);
+  --arco-3: color-mix(in srgb, var(--red)  13%, transparent);
+}
+:root[data-modo="claro"] {
+  --arco-1: color-mix(in srgb, var(--red)  11%, transparent);
+  --arco-2: color-mix(in srgb, #000000      5%, transparent);
+  --arco-3: color-mix(in srgb, var(--red)   7%, transparent);
+}
+
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: -1;
+  pointer-events: none;
+  background:
+    repeating-radial-gradient(circle at 8% 6%,
+      transparent 0 7vmax, var(--arco-1) 11vmax, transparent 15vmax 30vmax),
+    repeating-radial-gradient(circle at 92% 88%,
+      transparent 0 9vmax, var(--arco-2) 14vmax, transparent 19vmax 38vmax),
+    repeating-radial-gradient(circle at 78% 10%,
+      transparent 0 6vmax, var(--arco-3) 10vmax, transparent 14vmax 32vmax);
+  /* El desenfoque funde los bordes de las bandas: sin él los anillos
+     se ven como aros duros en lugar de arcos suaves. */
+  filter: blur(1.5px);
+  opacity: .9;
+}
+
+/* Con muy poco alto (móvil apaisado) los aros se amontonan: se reduce
+   su presencia para que no compitan con el contenido. */
+@media (max-height: 520px) {
+  body::before { opacity: .55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html, body { transition: none; }
 }
 
 /* ══ NAVBAR ══ */
 .navbar {
   display: flex; align-items: center;
-  justify-content: space-between;
+  /* Los botones de navegación van pegados al logo; la zona de sesión se
+     empuja sola al otro extremo con su margen automático. Con
+     `space-between` los tres grupos se repartían y la navegación
+     quedaba flotando en el centro. */
+  justify-content: flex-start;
   padding: 0 20px; height: 56px;
   background: color-mix(in srgb, var(--bg) 65%, transparent);
   backdrop-filter: var(--glass-blur);
@@ -77,7 +136,9 @@ body {
 }
 .navbar-logo { display: flex; align-items: center; gap: 10px; cursor: pointer; flex-shrink: 0; text-decoration: none; }
 .navbar-logo img { height: 46px; width: auto; }
-.navbar-nav { display: flex; align-items: center; gap: 4px; flex: 1; flex-wrap: wrap; }
+/* La zona izquierda cede espacio antes que la de sesión, y nunca se
+   apila en varias líneas: al estrecharse, los botones pasan a solo icono. */
+.navbar-nav { display: flex; align-items: center; gap: 4px; flex: 0 1 auto; min-width: 0; flex-wrap: nowrap; }
 .nav-btn {
   font-family: inherit; font-size: 13px; font-weight: 500;
   padding: 6px 12px; cursor: pointer;
@@ -90,7 +151,7 @@ body {
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
 }
 .nav-btn:hover { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, transparent); transform: translateY(-1px); }
-.navbar-session { display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+.navbar-session { display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: nowrap; margin-left: auto; }
 .session-info { display: flex; align-items: center; gap: 8px; }
 .session-nombre { font-size: 13px; font-weight: 500; color: var(--text-2); display: flex; align-items: center; gap: 8px; }
 .session-badge {
@@ -183,7 +244,7 @@ body {
 .pwd-toggle:hover { color: var(--red); }
 
 /* Grupo de botones "movibles" de la barra superior (se ocultan en móvil) */
-.session-primary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.session-primary { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
 
 /* ══ DIÁLOGO (requiere cuenta para subir) ══ */
 .dlg-overlay {
@@ -299,29 +360,82 @@ body {
   .session-primary { display: none !important; }
   .navbar { min-height: 52px; }
 
+  /* Cápsula flotante, según la referencia: centrada, de ancho acotado,
+     con trazo fino del acento y cristal esmerilado. */
   .mobile-nav {
-    display: flex; align-items: center; justify-content: space-around;
-    position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 300;
-    background: linear-gradient(var(--glass-tint), var(--glass-tint)), color-mix(in srgb, var(--bg-1) 62%, transparent);
-    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--glass-bd);
-    border-radius: 24px; padding: 8px 6px;
-    box-shadow: 0 12px 34px rgba(0,0,0,.28), inset 0 1px 0 var(--glass-hi);
+    display: flex; align-items: center; justify-content: space-around; gap: 4px;
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+    width: calc(100% - 28px); max-width: 416px; z-index: 300;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bg-1) 82%, transparent);
+    backdrop-filter: blur(14px) saturate(1.1);
+    -webkit-backdrop-filter: blur(14px) saturate(1.1);
+    border: 1px solid color-mix(in srgb, var(--red) 20%, transparent);
+    box-shadow: 0 10px 34px rgba(0,0,0,.6),
+                0 0 22px color-mix(in srgb, var(--red) 7%, transparent);
   }
   .mobile-nav a {
     display: flex; align-items: center; justify-content: center;
-    width: 46px; height: 46px; border-radius: 14px;
-    color: var(--text-3); text-decoration: none; transition: color .15s, background .15s;
+    width: 44px; height: 44px; border-radius: 14px;
+    color: var(--text); opacity: .45; text-decoration: none;
+    transition: opacity .15s, color .15s, background .15s;
   }
-  .mobile-nav a:active { background: var(--bg-2); }
-  .mobile-nav a.activo { color: var(--red); }
+  .mobile-nav a:hover  { opacity: .8; }
+  .mobile-nav a:active { background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .mobile-nav a.activo {
+    color: var(--red); opacity: 1;
+    background: color-mix(in srgb, var(--red) 10%, transparent);
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--red) 55%, transparent));
+  }
+  /* El "+" deja de ser un círculo sobresaliente: pasa a casilla
+     redondeada dentro de la cápsula, como en la referencia. */
   .mobile-nav a.center {
-    width: 56px; height: 56px; border-radius: 50%;
-    background: var(--red-2); color: #fff;
-    box-shadow: 0 6px 18px var(--red-glow); margin-top: -20px;
-    border: 3px solid var(--bg);
+    width: 46px; height: 46px; border-radius: 14px; margin-top: 0;
+    background: color-mix(in srgb, var(--red) 14%, transparent);
+    color: var(--red); opacity: 1;
+    border: 1px solid color-mix(in srgb, var(--red) 60%, transparent);
+    box-shadow: 0 0 8px  color-mix(in srgb, var(--red) 70%, transparent),
+                0 0 20px color-mix(in srgb, var(--red) 45%, transparent),
+                0 0 34px color-mix(in srgb, var(--red) 25%, transparent);
   }
-  .mobile-nav a.center:active { background: var(--red-dark); }
+  .mobile-nav a.center:active {
+    background: color-mix(in srgb, var(--red) 24%, transparent);
+  }
+
+  /* En claro el resplandor ensucia sobre fondo blanco: el "+" pasa a
+     macizo y el resto pierde el halo, igual que en la referencia. */
+  :root[data-modo="claro"] .mobile-nav {
+    background: rgba(255,255,255,.92);
+    border-color: rgba(0,0,0,.08);
+    box-shadow: 0 10px 28px rgba(0,0,0,.14);
+  }
+  /* En claro el "+" es macizo, pero conserva el halo: el neón de la barra
+     va en los dos modos. La cápsula sí se queda sin resplandor, que sobre
+     blanco ensuciaría el borde en vez de iluminarlo. */
+  :root[data-modo="claro"] .mobile-nav a.center {
+    background: var(--red); color: #fff;
+    border-color: transparent;
+  }
+
+  /* Respiración del neón, en los dos modos */
+  @keyframes respirar-nav {
+    0%,100% { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--red) 50%, transparent)); }
+    50%     { filter: drop-shadow(0 0 9px color-mix(in srgb, var(--red) 85%, transparent)); }
+  }
+  @keyframes respirar-mas {
+    0%,100% { box-shadow: 0 0 8px  color-mix(in srgb, var(--red) 50%, transparent),
+                          0 0 18px color-mix(in srgb, var(--red) 30%, transparent); }
+    50%     { box-shadow: 0 0 11px color-mix(in srgb, var(--red) 80%, transparent),
+                          0 0 26px color-mix(in srgb, var(--red) 50%, transparent),
+                          0 0 40px color-mix(in srgb, var(--red) 28%, transparent); }
+  }
+  .mobile-nav a.activo { animation: respirar-nav 3.2s ease-in-out infinite; }
+  .mobile-nav a.center { animation: respirar-mas 2.4s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-nav a.activo, .mobile-nav a.center { animation: none; }
+  }
 
   /* Que el contenido no quede tapado por la barra inferior */
   body { padding-bottom: 92px; }
@@ -339,9 +453,36 @@ body {
   .session-badge { display: none; }
 }
 
+/* ══ BARRA SUPERIOR: reducción por pasos ══
+   Entre 900 y 1300 px seguía mostrándose todo y no cabía: los botones se
+   apilaban en dos filas y la campana quedaba cortada. Ahora se recorta por
+   etapas — primero el nombre, luego las etiquetas — y "Administración"
+   conserva su texto por ser la sección menos evidente por el icono. */
+
+/* 1. Cae el nombre de usuario, que es lo más largo. La insignia se queda. */
+@media (max-width: 1300px) {
+  .session-nombre > span:not(.session-badge) { display: none; }
+  .session-nombre { gap: 6px; }
+}
+
+/* 2. Los botones pasan a solo icono, salvo Administración. */
+@media (max-width: 1120px) {
+  .btn-top:not(.btn-admin) span:not(.notif-badge) { display: none; }
+  .navbar-nav .nav-btn span { display: none; }
+  .btn-top:not(.btn-admin), .nav-btn { padding: 7px 9px; }
+  .navbar { padding: 0 14px; gap: 8px; }
+}
+
+/* 3. Muy justo: también cae la insignia y Administración queda en icono. */
+@media (max-width: 980px) {
+  .session-badge { display: none; }
+  .btn-top span:not(.notif-badge) { display: none; }
+  .btn-top { padding: 7px 9px; }
+}
+
 @media (max-width: 480px) {
   .navbar-nav .nav-btn span { display: none; }
-  .btn-top span { display: none; }
+  .btn-top span:not(.notif-badge) { display: none; }
 }
 
 /* ══ SELECTOR DE TEMAS ══ */
@@ -404,3 +545,441 @@ body {
 .notif-ico { font-size: 16px; line-height: 1.3; flex-shrink: 0; }
 .notif-txt { font-size: 13px; color: var(--text); line-height: 1.4; display: flex; flex-direction: column; gap: 3px; }
 .notif-fecha { font-size: 11px; color: var(--text-3); }
+
+/* Marcador de archivo ausente (fila en la base sin fichero en disco) */
+.media-nodisp {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 54px 20px; width: 100%;
+  color: var(--text-3);
+}
+.media-nodisp span { font-size: 12.5px; letter-spacing: .3px; }
+
+/* Aviso del selector de archivos sobre galerías de fotos */
+.hint-galeria {
+  font-size: 11.5px; color: var(--text-3); line-height: 1.5;
+  margin: 6px 0 2px;
+}
+
+/* Etiqueta "(opcional)" en el formulario de publicación */
+.opcional { color: var(--text-3); font-weight: 400; font-size: 11.5px; }
+
+/* ══════════════════════════════════════════════════════════
+   FORMATOS DE PUBLICACIÓN COMPARTIDOS
+   Los usan tanto el feed (inicio) como el detalle de categoría,
+   así que viven aquí y no en feed.css: cuando estaban allí, la
+   vista de categoría no los cargaba y la rejilla se desbordaba.
+   ══════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════
+   PHOTOSET — varias fotos en una publicación
+   Medidas de la especificación sobre un contenedor de 540 px:
+     1 columna → 540 px
+     2 columnas → 268 px  (268·2 + 4  = 540)
+     3 columnas → 177 px  (177·3 + 4·2 = 539)
+   El canal es de 4 px. Se reparte con flex en vez de fijar píxeles,
+   así en móvil encoge sin romperse pero a 540 px da esas medidas.
+   ══════════════════════════════════════════════════════════ */
+.feed-photoset {
+  display: flex; flex-direction: column;
+  gap: 4px;
+  background: var(--glass-bd);   /* se ve por el canal, define la rejilla */
+}
+.ps-fila { display: flex; gap: 4px; }
+
+.ps-celda {
+  flex: 1 1 0; min-width: 0;
+  display: block; position: relative; overflow: hidden;
+  background: #0a0a0a;
+  text-decoration: none;
+}
+.ps-celda img { width: 100%; display: block; }
+
+/* Fila de una sola foto: manda la proporción real de la imagen */
+.ps-fila[data-cols="1"] .ps-celda img { height: auto; max-height: 810px; object-fit: contain; }
+
+/* Filas de 2 y 3: celdas cuadradas y recorte centrado.
+   La especificación lo describe como "relación de aspecto varía hacia 1:1". */
+.ps-fila[data-cols="2"] .ps-celda,
+.ps-fila[data-cols="3"] .ps-celda { aspect-ratio: 1 / 1; }
+.ps-fila[data-cols="2"] .ps-celda img,
+.ps-fila[data-cols="3"] .ps-celda img { height: 100%; object-fit: cover; }
+
+/* Realce al pasar por encima, sin mover la rejilla */
+.ps-celda::after {
+  content: ""; position: absolute; inset: 0;
+  background: var(--red); opacity: 0;
+  transition: opacity .16s; pointer-events: none;
+}
+.ps-celda:hover::after { opacity: .12; }
+
+:root[data-modo="claro"] .ps-celda { background: #e4e4e7; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ps-celda::after { transition: none; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   PUBLICACIÓN DE AUDIO
+   Medidas de la especificación: bloque de 540 × 169 px (3,2:1)
+   con carátula cuadrada de 169 × 169 px a la izquierda.
+   Con varias pistas se añade debajo la lista (variante Playlist).
+   ══════════════════════════════════════════════════════════ */
+.audio-post { display: flex; flex-direction: column; }
+
+.ap-cabecera {
+  display: flex; align-items: stretch;
+  height: 169px;                     /* alto del post según la spec */
+  border-bottom: 1px solid var(--glass-bd);
+}
+
+/* Carátula 169 × 169 (1:1). La app no guarda arte de álbum todavía:
+   se muestra un marcador con el color del tema. */
+.ap-caratula {
+  width: 169px; height: 169px; flex-shrink: 0;
+  display: grid; place-items: center;
+  color: var(--red);
+  background:
+    radial-gradient(90% 80% at 50% 10%, var(--accent-soft) 0%, transparent 70%),
+    linear-gradient(160deg, color-mix(in srgb, var(--red) 20%, #0b0b0d), #0a0a0c);
+  border-right: 1px solid var(--glass-bd);
+}
+.ap-caratula svg { width: 54px; height: 54px; opacity: .85; }
+
+.ap-cuerpo {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; justify-content: center;
+  gap: 2px; padding: 14px 16px;
+}
+.ap-titulo {
+  font-size: 15px; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ap-artista {
+  font-size: 13px; color: var(--text-2); margin-bottom: 8px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* El reproductor compartido, encajado en el alto del bloque */
+.ap-cuerpo .glass-player { width: 100%; }
+.ap-cuerpo .gp-audio-art { display: none; }   /* la carátula ya está a la izquierda */
+.ap-cuerpo .gp-is-audio  { gap: 0; padding: 0; }
+.ap-cuerpo .gp-is-audio .gp-bar { max-width: none; margin: 0; padding: 8px 10px; }
+.ap-cuerpo .gp-controls { gap: 8px; }
+.ap-cuerpo .gp-play-main { width: 32px; height: 32px; }
+
+/* ── Variante lista de reproducción ── */
+.ap-lista {
+  list-style: none; margin: 0; padding: 6px 0;
+  max-height: 260px; overflow-y: auto;
+  border-bottom: 1px solid var(--glass-bd);
+}
+.ap-pista {
+  display: flex; align-items: center; gap: 12px;
+  padding: 7px 16px; cursor: pointer;
+  transition: background .13s;
+}
+.ap-pista:hover      { background: var(--bg-2); }
+.ap-pista.sonando    { background: var(--accent-soft); }
+.ap-pista.sonando .ap-pista-titulo { color: var(--red); }
+.ap-num {
+  width: 18px; flex-shrink: 0; text-align: right;
+  font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums;
+}
+.ap-pista-info { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.35; }
+.ap-pista-titulo  { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ap-pista-artista { font-size: 11.5px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ap-pista-dur {
+  font-size: 12px; color: var(--text-3); flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Línea "Fuente" del esquema */
+.feed-fuente {
+  font-size: 11.5px; color: var(--text-3);
+  padding: 10px 16px 0;
+}
+
+:root[data-modo="claro"] .ap-caratula {
+  background:
+    radial-gradient(90% 80% at 50% 10%, var(--accent-soft) 0%, transparent 70%),
+    linear-gradient(160deg, #ececee, #e0e0e3);
+}
+
+@media (max-width: 580px) {
+  .ap-cabecera  { height: 132px; }
+  .ap-caratula  { width: 132px; height: 132px; }
+  .ap-caratula svg { width: 42px; height: 42px; }
+  .ap-cuerpo    { padding: 10px 12px; }
+  .ap-pista     { padding: 7px 13px; }
+  .feed-fuente  { padding: 10px 13px 0; }
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   TAMAÑO DEL MEDIO — regla única para feed y categoría
+   El medio ocupa todo el ancho de la publicación y su altura
+   sale de la proporción real: nada de marcos fijos ni barras.
+   Tope de 810 px, que es el retrato 2:3 de la especificación
+   a 540 px de ancho (la relación más alta que contempla).
+   ══════════════════════════════════════════════════════════ */
+.feed-media,
+.detalle-media {
+  min-height: 0;
+  max-height: 810px;
+}
+
+/* Imagen: llena el ancho, alto según su proporción */
+.feed-media img.media-main,
+.detalle-media img.media-main {
+  width: 100%; height: auto;
+  max-height: 810px; object-fit: contain;
+  display: block; position: relative; z-index: 1;
+}
+
+/* Vídeo: mismo criterio que la imagen */
+.glass-player video.gp-media {
+  width: 100%; height: auto;
+  max-height: 810px; object-fit: contain;
+  display: block;
+}
+
+/* El relleno ambiental desenfocado sólo asoma cuando el medio no llena
+   el marco (por ejemplo un retrato recortado por el tope de 810 px). */
+.feed-media .media-blur,
+.detalle-media .media-blur { z-index: 0; }
+
+/* En móvil el tope baja: 810 px ocuparían casi toda la pantalla y
+   obligarían a desplazarse para ver el pie de la publicación. */
+@media (max-width: 580px) {
+  .feed-media, .detalle-media,
+  .feed-media img.media-main, .detalle-media img.media-main,
+  .glass-player video.gp-media { max-height: 70vh; }
+}
+
+/* ── Botón de donaciones ── */
+.btn-donar {
+  text-decoration: none;
+  color: var(--red) !important;
+  background: var(--accent-soft) !important;
+  border-color: var(--accent-soft-bd) !important;
+}
+.btn-donar:hover { filter: brightness(1.12); }
+.btn-donar svg { fill: currentColor; }
+
+/* Piezas del photoset que sólo usa la vista de categoría en móvil.
+   Ocultas y fuera de flujo por defecto: el feed del inicio no cambia. */
+.ps-blur, .ps-expandir { display: none; }
+
+/* ══════════════════════════════════════════════════════════
+   NEÓN CON RESPIRACIÓN — unos pocos elementos, a propósito
+   Sólo las acciones principales en color de acento. Si respirara
+   todo, el efecto dejaría de destacar nada. El halo se deriva de
+   `--red`, así que sigue al tema activo.
+
+   Va sólo en modo oscuro: sobre fondo claro un halo amplio ensucia
+   el elemento en vez de iluminarlo.
+   ══════════════════════════════════════════════════════════ */
+@keyframes neon-boton {
+  0%, 100% {
+    box-shadow: 0 0 7px  color-mix(in srgb, var(--red) 45%, transparent),
+                0 0 16px color-mix(in srgb, var(--red) 24%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--red) 80%, transparent),
+                0 0 26px color-mix(in srgb, var(--red) 50%, transparent),
+                0 0 42px color-mix(in srgb, var(--red) 26%, transparent);
+  }
+}
+
+:root[data-modo="oscuro"] .btn-donar,
+:root[data-modo="oscuro"] .btn-subir {
+  animation: neon-boton 3.4s ease-in-out infinite;
+}
+/* Al pasar el cursor se congela en el punto alto: si siguiera latiendo
+   mientras se apunta, parecería que el botón no responde. */
+:root[data-modo="oscuro"] .btn-donar:hover,
+:root[data-modo="oscuro"] .btn-subir:hover {
+  animation: none;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--red) 85%, transparent),
+              0 0 28px color-mix(in srgb, var(--red) 55%, transparent),
+              0 0 44px color-mix(in srgb, var(--red) 28%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-modo="oscuro"] .btn-donar,
+  :root[data-modo="oscuro"] .btn-subir { animation: none; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   ENCUADRE EN EL PANEL DE SUBIDA
+   Marco de proporción fija; el medio se arrastra dentro para
+   decidir qué queda visible.
+   ══════════════════════════════════════════════════════════ */
+.bloque-encuadre:empty { display: none; }
+.bloque-encuadre { margin-top: 4px; }
+
+.enc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.enc-chip {
+  font-family: inherit; font-size: 12.5px; font-weight: 600;
+  padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  background: var(--bg-2); color: var(--text-3);
+  border: 1px solid var(--border);
+  transition: background .15s, color .15s, border-color .15s;
+}
+.enc-chip:hover  { color: var(--text-2); }
+.enc-chip.activo {
+  background: var(--accent-soft); color: var(--red);
+  border-color: var(--accent-soft-bd);
+}
+
+.enc-lista {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+.enc-item { margin: 0; min-width: 0; }
+
+.enc-marco {
+  position: relative; overflow: hidden;
+  border-radius: 10px; background: #0a0a0a;
+  border: 1px solid var(--border);
+  cursor: grab; touch-action: none;   /* el arrastre es nuestro, no del scroll */
+  user-select: none;
+}
+.enc-marco.arrastrando { cursor: grabbing; border-color: var(--red-2); }
+.enc-marco img, .enc-marco video {
+  width: 100%; height: 100%; display: block;
+  object-fit: cover;                  /* llena el marco: es lo que se recorta */
+  pointer-events: none;               /* el gesto lo recibe el marco */
+}
+/* Guías de tercios: ayudan a colocar sin competir con la imagen. */
+.enc-guias {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(to right,  transparent 33.33%, rgba(255,255,255,.28) 33.33%, rgba(255,255,255,.28) calc(33.33% + 1px), transparent calc(33.33% + 1px)),
+    linear-gradient(to right,  transparent 66.66%, rgba(255,255,255,.28) 66.66%, rgba(255,255,255,.28) calc(66.66% + 1px), transparent calc(66.66% + 1px)),
+    linear-gradient(to bottom, transparent 33.33%, rgba(255,255,255,.28) 33.33%, rgba(255,255,255,.28) calc(33.33% + 1px), transparent calc(33.33% + 1px)),
+    linear-gradient(to bottom, transparent 66.66%, rgba(255,255,255,.28) 66.66%, rgba(255,255,255,.28) calc(66.66% + 1px), transparent calc(66.66% + 1px));
+  opacity: 0; transition: opacity .15s;
+}
+.enc-marco:hover .enc-guias,
+.enc-marco.arrastrando .enc-guias { opacity: 1; }
+
+.enc-nombre {
+  display: block; margin-top: 5px;
+  font-size: 11px; color: var(--text-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.enc-nota { font-size: 11px; color: var(--text-3); margin-top: 10px; }
+
+/* ── Encuadre elegido al subir, aplicado en el feed ──
+   El marco lleva la proporción y `--encuadre` dice qué parte se ve. Las
+   publicaciones anteriores no traen `aspecto` y conservan su tamaño
+   natural: la clase sólo aparece cuando hay encuadre guardado. */
+.feed-media.con-encuadre {
+  max-height: none;          /* manda la proporción elegida, no el tope */
+  overflow: hidden;
+}
+.feed-media.con-encuadre img.media-main,
+.feed-media.con-encuadre video.gp-media,
+.feed-media.con-encuadre .glass-player {
+  width: 100%; height: 100%; max-height: none;
+  object-fit: cover;
+  object-position: var(--encuadre, 50% 50%);
+}
+/* El relleno desenfocado sobra: con `cover` no quedan huecos. */
+.feed-media.con-encuadre .media-blur,
+.feed-media.con-encuadre video.gp-blur { display: none; }
+
+/* Distintivo del formato recomendado dentro del chip. */
+.enc-chip.recomendado { display: inline-flex; align-items: center; gap: 6px; }
+.enc-rec {
+  font-size: 9.5px; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; line-height: 1;
+  padding: 3px 6px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--red);
+}
+/* Ya seleccionado, el distintivo se apaga: el propio chip lo dice. */
+.enc-chip.recomendado.activo .enc-rec {
+  background: color-mix(in srgb, var(--red) 18%, transparent);
+}
+
+/* ── Controles del vídeo dentro del marco de encuadre ──
+   Permiten verlo en movimiento mientras se ajusta el recorte, en vez de
+   decidir sobre un fotograma congelado. */
+.enc-ctrl {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  background: linear-gradient(to top, rgba(0,0,0,.72), transparent);
+}
+.enc-play {
+  display: grid; place-items: center;
+  width: 26px; height: 26px; padding: 0; flex-shrink: 0;
+  border: none; border-radius: 50%;
+  background: rgba(0,0,0,.55); color: #fff; cursor: pointer;
+  backdrop-filter: blur(3px);
+}
+.enc-play svg { width: 14px; height: 14px; }
+.enc-play:active { transform: scale(.92); }
+
+/* El selector repite `.modal-box form` porque esa regla genérica da a
+   TODO input del formulario fondo, borde, 10px de relleno y 14px de margen
+   inferior: sin igualar su peso, la barra salía como un campo de texto
+   grueso y descolgado del botón. */
+.modal-box form .enc-seek,
+.enc-seek {
+  -webkit-appearance: none; appearance: none;
+  flex: 1; width: auto; min-width: 0;
+  height: 3px; border: none; border-radius: 3px;
+  padding: 0; margin: 0;                 /* el margen era lo que descentraba */
+  cursor: pointer; outline: none;
+  background: rgba(255,255,255,.34);
+  align-self: center;                    /* a la misma línea que el botón */
+}
+.modal-box form .enc-seek:focus,
+.enc-seek:focus { border: none; box-shadow: none; }
+.modal-box form .enc-seek:focus-visible,
+.enc-seek:focus-visible { box-shadow: 0 0 0 3px rgba(255,255,255,.22); }
+.enc-seek::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.55); cursor: pointer;
+}
+.enc-seek::-moz-range-thumb {
+  width: 10px; height: 10px; border: none; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.55); cursor: pointer;
+}
+
+/* Mientras se reproduce, las guías de tercios molestan menos apagadas. */
+.enc-marco.reproduciendo .enc-guias { opacity: 0; }
+.enc-marco.reproduciendo.arrastrando .enc-guias { opacity: 1; }
+
+/* ── Encuadre de cada foto de una galería ──
+   Se aplica sólo en el feed y en el perfil. La vista de categoría queda
+   fuera a propósito: allí manda su marco 16:9 con relleno desenfocado,
+   que es lo que se decidió para navegar entre publicaciones. */
+.feed-card .ps-celda[data-ar],
+.pp-card   .ps-celda[data-ar] {
+  aspect-ratio: var(--ar);
+}
+.feed-card .ps-celda[data-ar] img,
+.pp-card   .ps-celda[data-ar] img {
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--encuadre, 50% 50%);
+  max-height: none;
+}
+
+/* Vista previa del reproductor: el fotograma de la mitad, superpuesto.
+   Va por encima del vídeo (z-index 1) y por debajo de la barra de
+   controles (z-index 3), para no taparla. */
+.glass-player .gp-previa {
+  position: absolute; inset: 0; z-index: 2;
+  width: 100%; height: 100%;
+  object-fit: contain;          /* el mismo encuadre que el vídeo */
+  pointer-events: none;         /* el clic llega al vídeo, que reproduce */
+  display: block;
+}
+/* Con encuadre elegido al subir, la vista previa lo acompaña. */
+.feed-media.con-encuadre .gp-previa {
+  object-fit: cover;
+  object-position: var(--encuadre, 50% 50%);
+}

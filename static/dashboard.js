@@ -8,24 +8,44 @@ renderSessionBar().then(async me => {
   const grid = document.getElementById('folders-grid');
 
   try {
-    CATEGORIAS = await fetch('/api/categorias').then(r => r.json());
+    CATEGORIAS = await fetch('/api/categorias/detalle').then(r => r.json());
   } catch {
-    CATEGORIAS = ['Fantasmas','Duendes','Exorcismo','Poltergeist','Psicofonias','Ouija','Animales','Brujeria','Modo Incognito'];
+    CATEGORIAS = ['Fantasmas','Duendes','Exorcismo','Poltergeist','Psicofonias',
+                  'Ouija','Animales','Brujeria','Modo Incognito']
+                 .map(nombre => ({ nombre, icono: '' }));
   }
 
-  CATEGORIAS.forEach(cat => {
+  const contador = document.getElementById('cats-count');
+  if (contador) contador.textContent = CATEGORIAS.length;
+
+  // La casilla marcada es la última categoría que se abrió. Sin ella la
+  // rejilla se queda entera en gris y pierde el acento de la referencia,
+  // donde siempre hay una encendida.
+  const ultima = localStorage.getItem('ultimaCategoria');
+
+  CATEGORIAS.forEach(c => {
+    const cat = c.nombre;
+    const esIncognito = normalizarNombre(cat) === 'modo incognito';
     const item = document.createElement('div');
-    item.className = 'folder-item';
-    const esIncognito = cat === 'Modo Incognito';
+    item.className = 'folder-item'
+      + (esIncognito ? ' es-incognito' : '')
+      + (cat === ultima ? ' activa' : '');
+    item.tabIndex = 0;
+    item.setAttribute('role', 'link');
+    item.setAttribute('aria-label', 'Abrir categoría ' + cat);
     item.innerHTML = `
-      <p class="folder-label ${esIncognito ? 'folder-incognito' : ''}">${cat}</p>
-      <div class="folder-icon ${esIncognito ? 'folder-icon-incognito' : ''}">
-        <div class="folder-vhs"></div>
-        <div class="folder-glitch"></div>
-      </div>
+      <span class="folder-badge">
+        <svg viewBox="0 0 24 24" aria-hidden="true">${svgIcono(c.icono, cat)}</svg>
+      </span>
+      <p class="folder-label">${cat}</p>
     `;
-    item.addEventListener('click', () => {
+    const abrir = () => {
+      localStorage.setItem('ultimaCategoria', cat);
       window.location.href = '/carpeta.html?cat=' + encodeURIComponent(cat);
+    };
+    item.addEventListener('click', abrir);
+    item.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); }
     });
     grid.appendChild(item);
   });

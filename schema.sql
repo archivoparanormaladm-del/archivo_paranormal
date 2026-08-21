@@ -37,19 +37,34 @@ CREATE TABLE IF NOT EXISTS archivos (
     usuario_id       INT REFERENCES usuarios(id) ON DELETE SET NULL,
     created_at       TIMESTAMP NOT NULL DEFAULT NOW(),
     revisado_at      TIMESTAMP,
+    -- Quién aprobó o rechazó: sin esto no se puede auditar quién publicó qué.
+    revisado_por     INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
     asunto           VARCHAR(200),
     oculto           BOOLEAN NOT NULL DEFAULT FALSE,
-    visitas_count    INTEGER DEFAULT 0
+    visitas_count    INTEGER DEFAULT 0,
+    -- Encuadre elegido al subir: proporción del marco y qué parte del
+    -- medio se ve dentro. El fichero no se recorta; se aplica al mostrarlo.
+    aspecto          VARCHAR(8),
+    encuadre         VARCHAR(16),
+    galeria_id       VARCHAR(32),                    -- subidos juntos (photoset / playlist)
+    artista          VARCHAR(120)                    -- intérprete, en publicaciones de audio
 );
+-- Para bases creadas antes de que existieran estas columnas:
+ALTER TABLE archivos ADD COLUMN IF NOT EXISTS galeria_id VARCHAR(32);
+ALTER TABLE archivos ADD COLUMN IF NOT EXISTS artista    VARCHAR(120);
+CREATE INDEX IF NOT EXISTS idx_archivos_galeria ON archivos (galeria_id);
 
 -- ── Categorías (carpetas temáticas; gestionables desde el admin) ──
 CREATE TABLE IF NOT EXISTS categorias (
     id          SERIAL PRIMARY KEY,
     nombre      VARCHAR(100) NOT NULL,
     orden       INTEGER NOT NULL DEFAULT 0,
+    icono       VARCHAR(40),                    -- clave en static/iconos.js
     created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT categorias_nombre_key UNIQUE (nombre)
 );
+-- Para bases creadas antes de que existiera la columna `icono`:
+ALTER TABLE categorias ADD COLUMN IF NOT EXISTS icono VARCHAR(40);
 
 -- ── Etiquetas y su relación N:M con archivos ───────────────
 CREATE TABLE IF NOT EXISTS etiquetas (
@@ -191,6 +206,15 @@ CREATE TABLE IF NOT EXISTS configuracion (
 );
 INSERT INTO configuracion (clave, valor) VALUES
     ('max_content_mb', '50'),
+    -- Botón de donaciones (el enlace lo pega el Super Admin desde su panel)
+    ('donaciones_url', ''),
+    ('donaciones_texto', 'Donar'),
+    ('donaciones_activo', 'false'),
+    -- Peso máximo por tipo de archivo (editables desde el panel)
+    ('peso_imagen_mb',  '20'),
+    ('peso_galeria_mb', '10'),
+    ('peso_video_mb',   '50'),
+    ('peso_audio_mb',   '10'),
     ('admin_perm_renombrar_carpetas', 'false'),
     ('admin_perm_mover_archivos', 'false'),
     ('admin_perm_editar_usuarios', 'false'),
@@ -244,3 +268,16 @@ VALUES (
     TRUE
 )
 ON CONFLICT (email) DO NOTHING;
+
+-- ── Reposteos ──
+-- Cada fila es "este usuario reposteó esta publicación". La restricción
+-- única hace que el botón sea un interruptor y no un contador que sube.
+CREATE TABLE IF NOT EXISTS reposts (
+    id         SERIAL PRIMARY KEY,
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    archivo_id INTEGER NOT NULL REFERENCES archivos(id) ON DELETE CASCADE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE (usuario_id, archivo_id)
+);
+CREATE INDEX IF NOT EXISTS idx_reposts_archivo ON reposts(archivo_id);
+CREATE INDEX IF NOT EXISTS idx_reposts_fecha   ON reposts(created_at DESC);

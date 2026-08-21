@@ -4,13 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Restablecer contraseña — Archivo Paranormal</title>
-<link rel="stylesheet" href="shared.css">
-<link rel="stylesheet" href="login.css">
+<script>
+/* Modo y tema aplicados antes del primer pintado: evita el destello oscuro
+   al navegar en modo claro. Debe ir ANTES de las hojas de estilo. */
+(function(){try{
+  var d=document.documentElement;
+  d.setAttribute('data-modo', localStorage.getItem('modo')||'claro');
+  var T={rojo:['#e63535','#c02020','#8a0f0f','#1c0808','rgba(230,53,53,.35)'],
+    verde:['#22c55e','#16a34a','#14532d','#052e16','rgba(34,197,94,.35)'],
+    azul:['#3b82f6','#2563eb','#1e3a8a','#0d1f4a','rgba(59,130,246,.35)'],
+    morado:['#a855f7','#9333ea','#581c87','#2e0f4a','rgba(168,85,247,.35)'],
+    naranja:['#f97316','#ea580c','#7c2d12','#3d1505','rgba(249,115,22,.35)'],
+    cyan:['#06b6d4','#0891b2','#164e63','#042f3e','rgba(6,182,212,.35)'],
+    rosa:['#ec4899','#db2777','#831843','#3d0a24','rgba(236,72,153,.35)'],
+    amarillo:['#eab308','#ca8a04','#713f12','#2d1a03','rgba(234,179,8,.35)']};
+  var t=T[localStorage.getItem('tema')];
+  if(t){var k=['--red','--red-2','--red-dark','--red-bg','--red-glow'];
+    for(var i=0;i<5;i++) d.style.setProperty(k[i],t[i]);}
+}catch(e){}})();
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="shared.css?v=20260822q">
+<link rel="stylesheet" href="login.css?v=20260822q">
 </head>
 <body>
 
 <div class="login-logo">
-  <img src="/logo.png" alt="Archivo Paranormal">
+  <img src="/logoblack-nav.png" alt="Archivo Paranormal">
 </div>
 
 <div class="login-wrap">
@@ -28,7 +48,7 @@
 </div>
 
 <div class="vhs-overlay"></div>
-<script src="temas.js"></script>
+<script src="temas.js?v=20260822q"></script>
 <script>
 const TOKEN = new URLSearchParams(location.search).get('token') || '';
 if (!TOKEN) {

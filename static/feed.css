@@ -1,13 +1,56 @@
+/* ══════════════════════════════════════════════════════════
+   ANCHO DE LA PUBLICACIÓN
+   La especificación fijaba 540 px de contenido (542 con el borde,
+   que cuenta por `box-sizing: border-box`), y de ahí salían el
+   resto de medidas del formato: la rejilla del photoset en
+   540/268/177, el tope de 810 px de alto y el bloque de audio de
+   540x169 con carátula de 169.
+
+   En escritorio la publicación se queda corta contra la pantalla,
+   así que el ancho vive en `--post-w` y TODAS esas medidas se
+   derivan de él. Al crecer el ancho crecen en la misma proporción,
+   así que el formato es el mismo, sólo que más grande: la relación
+   límite del retrato sigue siendo 2:3 y el bloque de audio sigue
+   siendo 3,2:1. Es lo que evita que un retrato aparezca con barras
+   al ensanchar.
+
+   `body:has(.feed)` acota la variable al inicio: el perfil reutiliza
+   `.feed-card` con su propia rejilla y no debe cambiar de tamaño.
+   ══════════════════════════════════════════════════════════ */
+/* Crece de forma continua entre 540 y 958. Con un corte por consulta de
+   medios el ancho saltaba de golpe de 540 a 958 al cruzar el umbral. */
+body:has(.feed) { --post-w: clamp(540px, calc(100vw - 120px), 958px); }
+
 .feed {
-  max-width: 620px; margin: 0 auto;
-  padding: 24px 16px 100px;
-  display: flex; flex-direction: column; gap: 22px;
+  max-width: calc(var(--post-w, 540px) + 2px); margin: 0 auto;
+  padding: 24px 0 100px;
+  display: flex; flex-direction: column; gap: 24px;
 }
 
 /* ── Pestañas Para ti / Siguiendo ── */
 .feed-tabs {
-  max-width: 620px; margin: 18px auto 0; padding: 0 16px;
+  max-width: calc(var(--post-w, 540px) + 2px); margin: 18px auto 0;
   display: flex; gap: 8px;
+}
+
+/* Medidas derivadas del ancho. Los factores son los de la
+   especificación sobre 540: 810/540 = 1,5 y 169/540 = 0,3130. */
+.feed .feed-card .feed-media,
+.feed .feed-card .feed-media img.media-main,
+.feed .feed-card .glass-player video.gp-media,
+.feed .feed-card .ps-fila[data-cols="1"] .ps-celda img {
+  max-height: calc(var(--post-w, 540px) * 1.5);
+}
+.feed .feed-card .ap-cabecera {
+  height: calc(var(--post-w, 540px) * .3130);
+}
+.feed .feed-card .ap-caratula {
+  width:  calc(var(--post-w, 540px) * .3130);
+  height: calc(var(--post-w, 540px) * .3130);
+}
+.feed .feed-card .ap-caratula svg {
+  width:  calc(var(--post-w, 540px) * .1);
+  height: calc(var(--post-w, 540px) * .1);
 }
 .feed-tab {
   flex: 1; font-family: inherit; font-size: 14px; font-weight: 700;
@@ -24,11 +67,30 @@
 .feed-loader { display: flex; justify-content: center; padding: 10px 0 80px; }
 
 .feed-card {
-  background: var(--bg-1); border: 1px solid var(--border);
-  border-radius: 16px; padding: 14px 16px 10px;
+  /* Sin padding: la media va a sangre contra los bordes, como en la
+     referencia. Cada sección pone el suyo. */
+  padding: 0; overflow: hidden;
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 40% at 50% 0%, var(--glass-tint) 0%, transparent 62%),
+    color-mix(in srgb, var(--bg-1) 88%, transparent);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-bd);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.16),
+    0 8px 20px rgba(0,0,0,.20),
+    0 20px 44px rgba(0,0,0,.24),
+    inset 0 1px 0 var(--glass-hi);
 }
 
-.feed-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+/* Barra de título de la publicación (el "Blog-Title" del esquema) */
+.feed-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--glass-bd);
+}
 .feed-head .autor-avatar { width: 36px; height: 36px; margin-right: 0; }
 .feed-head-info { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
 .feed-user { font-size: 14px; font-weight: 700; color: var(--text); }
@@ -45,36 +107,84 @@ a.feed-user:hover { color: var(--red); }
 .feed-cat:hover { filter: brightness(1.1); }
 
 .feed-media {
-  position: relative; overflow: hidden; border-radius: 14px;
+  position: relative; overflow: hidden;
+  /* A sangre: sin radio propio ni márgenes, la tarjeta ya recorta */
+  border-radius: 0; margin: 0;
   background: #0a0a0a; display: flex; align-items: center; justify-content: center;
-  min-height: 180px; max-height: 74vh; margin-bottom: 12px;
 }
-.feed-media img.media-main { max-width: 100%; max-height: 74vh; object-fit: contain; display: block; position: relative; z-index: 1; }
+/* El tamaño lo fijan las reglas compartidas de shared.css. */
 
-.feed-asunto { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; word-break: break-word; }
-.feed-desc { font-size: 14px; color: var(--text-2); line-height: 1.6; margin-bottom: 8px; word-break: break-word; white-space: pre-wrap; }
+.feed-asunto {
+  font-size: 16px; font-weight: 700; color: var(--text);
+  padding: 14px 16px 0; margin-bottom: 4px; word-break: break-word;
+}
+.feed-desc-wrap { padding: 0 16px; }
+.feed-asunto + .feed-desc-wrap { padding-top: 2px; }
+.feed-media + .feed-desc-wrap  { padding-top: 14px; }
+.feed-desc {
+  font-size: 14px; color: var(--text-2); line-height: 1.6;
+  margin-bottom: 4px; word-break: break-word; white-space: pre-wrap;
+}
 
+/* Barra inferior: metadatos discretos a la izquierda y, a la derecha,
+   la fila de iconos de acción que marca el esquema
+   (compartir · comentar · guardar · me gusta). */
 .feed-stats {
-  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-  border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px;
+  display: flex; align-items: center; gap: 4px;
+  padding: 6px 10px 8px;
+  border-top: 1px solid var(--glass-bd);
+  margin-top: 10px;
+}
+
+/* Contador de interacciones ("123 notas" en el esquema). Es el elemento
+   con más peso del pie; se oculta solo cuando no hay ninguna. */
+.feed-notas {
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  color: var(--text); background: none; border: none;
+  padding: 8px 10px; border-radius: 10px; cursor: pointer;
+  transition: color .15s, background .15s;
+}
+.feed-notas:hover { color: var(--red); background: var(--bg-2); }
+.feed-notas:empty { display: none; }
+.feed-acciones {
+  display: flex; align-items: center; gap: 2px;
+  margin-left: auto;
 }
 .feed-stat {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 13px; color: var(--text-2); background: none; border: none;
   cursor: pointer; text-decoration: none; font-family: inherit;
-  padding: 6px 10px; border-radius: 8px; transition: color .15s, background .15s;
+  padding: 8px 10px; border-radius: 10px;
+  transition: color .15s, background .15s, transform .12s;
 }
 .feed-stat:hover { color: var(--red); background: var(--bg-2); }
+/* Los iconos de acción son cuadrados y sólo crecen si llevan número */
+.feed-acciones .feed-stat { padding: 8px; gap: 5px; }
+.feed-acciones .feed-stat:active { transform: scale(.9); }
+.feed-acciones .feed-stat span:empty { display: none; }
+.feed-acciones .feed-stat span {
+  font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
 .feed-like.activo { color: var(--red); }
 .feed-like.activo svg { fill: var(--red); }
-.feed-abrir { margin-left: auto; font-weight: 600; color: var(--red); }
+.feed-guardar.activo { color: var(--red); }
+.feed-guardar.activo svg { fill: var(--red); }
+.feed-vistas { cursor: default; }
+.feed-vistas:hover { color: var(--text-2); background: none; }
+.feed-abrir { font-weight: 600; color: var(--red); }
 
 /* Modo claro: fondo de la media */
 :root[data-modo="claro"] .feed-media { background: #e4e4e7; }
 
-@media (max-width: 680px) {
-  .feed { padding: 14px 10px 96px; gap: 16px; }
-  .feed-card { border-radius: 14px; }
+@media (max-width: 580px) {
+  .feed      { padding: 14px 10px 96px; gap: 16px; }
+  .feed-tabs { padding: 0 10px; }
+  .feed-card { border-radius: 15px; }
+  .feed-head { padding: 10px 13px; }
+  .feed-asunto     { padding: 12px 13px 0; }
+  .feed-desc-wrap  { padding: 0 13px; }
+  .feed-stats      { padding: 4px 7px 6px; }
+  .feed-coments    { padding: 12px 13px 14px; }
 }
 
 /* ── Botón Seguir ── */
@@ -97,12 +207,8 @@ a.feed-user:hover { color: var(--red); }
 }
 .feed-vermas:hover { color: var(--red); }
 
-/* Guardar activo */
-.feed-guardar.activo { color: var(--red); }
-.feed-guardar.activo svg { fill: var(--red); }
-
 /* ── Comentarios inline (estilo Instagram) ── */
-.feed-coments { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--border); }
+.feed-coments { padding: 12px 16px 14px; border-top: 1px solid var(--glass-bd); background: color-mix(in srgb, var(--bg) 24%, transparent); }
 .fc-lista { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; max-height: 300px; overflow-y: auto; }
 .fc-cargando, .fc-vacio { font-size: 12px; color: var(--text-3); font-style: italic; }
 .fc-item { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
@@ -122,3 +228,68 @@ a.feed-user:hover { color: var(--red); }
   font-size: 13px; font-weight: 700; cursor: pointer; padding: 8px 6px; flex-shrink: 0;
 }
 .fc-enviar:hover { color: var(--red-dark); }
+
+/* ══════════════════════════════════════════════════════════
+   PUBLICACIÓN DE TEXTO
+   Sin media: 540 px de ancho y altura que se extiende con la
+   entrada. El título gana peso porque es lo primero que se lee.
+   ══════════════════════════════════════════════════════════ */
+.feed-card.es-texto .feed-asunto {
+  font-size: 25px; font-weight: 700; line-height: 1.25;
+  color: var(--red);
+  padding: 20px 20px 0;
+  letter-spacing: -.2px;
+}
+.feed-card.es-texto .feed-desc-wrap { padding: 0 20px; }
+.feed-card.es-texto .feed-asunto + .feed-desc-wrap { padding-top: 12px; }
+
+.feed-desc.es-texto {
+  font-size: 15px; line-height: 1.72;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+/* Espacio entre párrafos cuando el autor usa saltos de línea */
+.feed-desc.es-texto { white-space: pre-wrap; }
+
+/* Sin media, el pie necesita algo de aire por encima */
+.feed-card.es-texto .feed-stats { margin-top: 14px; }
+
+/* Un post de texto sin título arranca directamente con el cuerpo */
+.feed-card.es-texto .feed-desc-wrap:first-of-type { padding-top: 18px; }
+
+@media (max-width: 580px) {
+  .feed-card.es-texto .feed-asunto    { font-size: 21px; padding: 16px 15px 0; }
+  .feed-card.es-texto .feed-desc-wrap { padding: 0 15px; }
+  .feed-desc.es-texto { font-size: 14.5px; }
+}
+
+/* En móvil el tope de altura baja a 70vh —si no, un retrato ocupa casi
+   toda la pantalla y hay que desplazarse para ver el pie de la
+   publicación—. La regla original vive en shared.css con menos peso que
+   las derivadas de arriba, así que hay que reafirmarla aquí. */
+@media (max-width: 580px) {
+  .feed .feed-card .feed-media,
+  .feed .feed-card .feed-media img.media-main,
+  .feed .feed-card .glass-player video.gp-media,
+  .feed .feed-card .ps-fila[data-cols="1"] .ps-celda img {
+    max-height: 70vh;
+  }
+}
+
+/* ── Reposteo ──
+   Rótulo de atribución sobre la cabecera: dice por qué esta publicación
+   aparece en tu feed. */
+.feed-repost-de {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 14px 0;
+  font-size: 12.5px; font-weight: 500;
+  color: var(--text-3); text-decoration: none;
+}
+.feed-repost-de svg { width: 15px; height: 15px; flex-shrink: 0; }
+.feed-repost-de:hover { color: var(--text-2); }
+
+/* Activo en verde y no en el color del tema: reposteado es un estado
+   afirmativo, y el acento ya lo usa "me gusta". */
+.feed-repost.activo { color: #0ca30c; }
+.feed-repost.activo svg { stroke: currentColor; }
+.feed-repost:disabled { opacity: .5; cursor: default; }
